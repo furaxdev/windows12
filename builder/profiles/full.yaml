@@ -9,3 +9,5 @@ name: full
 features:
   trivial_marker: true
   wallpaper: true
+  branding: true
+  theme: true

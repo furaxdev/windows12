@@ -2,21 +2,22 @@
 """
 hivex_set_value.py — écrit UNE valeur de registre dans une ruche Windows offline via hivex.
 
-Outil volontairement minimal pour la Phase 2 (builder minimal) : preuve que le pipeline
-peut éditer le registre Windows hors-ligne (sans DISM, sans Windows démarré), pas une
-fonctionnalité UI. Utilisé par builder/modules/40-customize-minimal.sh.
-
 Usage:
-    python3.12 hivex_set_value.py <chemin_ruche> <chemin_clé> <nom_valeur> <type> <valeur>
+    python3.12 hivex_set_value.py <chemin_ruche> <chemin_clé> <nom_valeur> <type> <valeur> [--create-keys]
 
     type: string | dword
 
 Notes honnêtes :
-- Ce script ne crée PAS la clé parente si elle n'existe pas déjà dans la ruche — il échoue
+- Sans --create-keys : si la clé parente n'existe pas déjà dans la ruche, le script échoue
   proprement plutôt que de deviner une structure de registre Windows qu'on ne maîtrise pas.
-- Testé uniquement contre une ruche SOFTWARE synthétique construite pour ce projet
-  (voir builder/tools/make_test_iso.py) — PAS ENCORE testé contre une vraie ruche
-  SOFTWARE de Windows 11 25H2, faute d'ISO officielle fournie dans cet environnement.
+- Avec --create-keys : les sous-clés manquantes du chemin sont créées au fur et à mesure
+  (comportement standard de l'éditeur de registre Windows quand on ajoute une valeur sous
+  une clé qui n'existe pas encore — ce n'est pas un hack, juste une création de clé normale).
+  Utile pour des clés qui n'existent pas forcément par défaut sur toutes les éditions/versions
+  (ex. OEMInformation).
+- Testé et confirmé fonctionnel contre une vraie ruche SOFTWARE de Windows 11 25H2 officielle
+  (voir docs/BUILD.md et le rapport de build du 2026-09-04) : écriture ET relecture (hivexget)
+  confirmées après commit.
 """
 import sys
 
@@ -29,12 +30,15 @@ except ImportError as exc:
 
 
 def main():
-    if len(sys.argv) != 6:
-        print(f"Usage: {sys.argv[0]} <ruche> <chemin_cle> <nom_valeur> <string|dword> <valeur>",
+    args = [a for a in sys.argv[1:] if a != "--create-keys"]
+    create_keys = "--create-keys" in sys.argv[1:]
+
+    if len(args) != 5:
+        print(f"Usage: {sys.argv[0]} <ruche> <chemin_cle> <nom_valeur> <string|dword> <valeur> [--create-keys]",
               file=sys.stderr)
         return 2
 
-    hive_path, key_path, value_name, value_type, raw_value = sys.argv[1:6]
+    hive_path, key_path, value_name, value_type, raw_value = args
 
     h = hivex.Hivex(hive_path, write=True)
 
@@ -43,10 +47,14 @@ def main():
         for part in key_path.strip("\\/").split("\\"):
             child = h.node_get_child(node, part)
             if child is None:
-                print(f"ERREUR: clé introuvable dans la ruche : ...\\{part} "
-                      f"(sous-chemin de '{key_path}') — la clé parente doit déjà exister.",
-                      file=sys.stderr)
-                return 1
+                if not create_keys:
+                    print(f"ERREUR: clé introuvable dans la ruche : ...\\{part} "
+                          f"(sous-chemin de '{key_path}') — la clé parente doit déjà exister "
+                          f"(ou relance avec --create-keys pour la créer).",
+                          file=sys.stderr)
+                    return 1
+                child = h.node_add_child(node, part)
+                print(f"INFO: clé créée : ...\\{part}", file=sys.stderr)
             node = child
 
     if value_type == "string":

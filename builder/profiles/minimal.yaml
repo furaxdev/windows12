@@ -12,3 +12,7 @@ features:
   # Remplace le fond d'écran par défaut du bureau (assets/wallpapers/) + configure le profil
   # utilisateur par défaut pour l'utiliser. Voir builder/modules/45-wallpaper.sh.
   wallpaper: true
+  # "By FuraxDev" dans winver + informations OEM. Voir builder/modules/42-branding.sh.
+  branding: true
+  # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.
+  theme: true

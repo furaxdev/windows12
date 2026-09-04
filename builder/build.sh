@@ -107,8 +107,20 @@ if grep -q '^\s*wallpaper:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_WALLPAPER=0
 fi
+if grep -q '^\s*branding:\s*true' "$PROFILE_FILE"; then
+  FEATURE_BRANDING=1
+else
+  FEATURE_BRANDING=0
+fi
+if grep -q '^\s*theme:\s*true' "$PROFILE_FILE"; then
+  FEATURE_THEME=1
+else
+  FEATURE_THEME=0
+fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
+log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
+log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
 
 # --- Pipeline ---
 module_00_validate
@@ -123,11 +135,25 @@ else
   report_step "40-customize-minimal" "SKIPPED" "désactivé par le profil"
 fi
 
+if [[ "$FEATURE_BRANDING" -eq 1 ]]; then
+  module_42_branding
+else
+  log_step "42-branding : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "42-branding" "SKIPPED" "désactivé par le profil"
+fi
+
 if [[ "$FEATURE_WALLPAPER" -eq 1 ]]; then
   module_45_wallpaper
 else
   log_step "45-wallpaper : SKIPPED (désactivé par le profil $PROFILE)"
   report_step "45-wallpaper" "SKIPPED" "désactivé par le profil"
+fi
+
+if [[ "$FEATURE_THEME" -eq 1 ]]; then
+  module_46_theme
+else
+  log_step "46-theme : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "46-theme" "SKIPPED" "désactivé par le profil"
 fi
 
 module_50_unmount
