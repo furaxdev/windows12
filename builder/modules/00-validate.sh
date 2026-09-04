@@ -40,10 +40,16 @@ module_00_validate() {
   # --- Privilèges ---
   require_root || { report_step "00-validate" "FAILED" "privilèges insuffisants"; return 1; }
 
-  # --- Espace disque : on exige au moins 6x la taille de l'ISO (extraction + mount + ISO de sortie + marge) ---
+  # --- Espace disque ---
+  # Le montage WIM via FUSE n'écrit pas de copie complète séparée (overlay léger), donc le
+  # gros du besoin réel est : arborescence extraite (~= taille ISO) + ISO régénérée (~= taille
+  # ISO) + marge de sécurité 25%. On exige 2.5x la taille de l'ISO source, pas plus — un
+  # multiplicateur type "6x" était injustifié et faisait échouer des builds qui auraient
+  # parfaitement tenu dans l'espace disponible.
   local iso_size min_required
   iso_size=$(stat -c '%s' "$ISO_PATH")
-  min_required=$(( iso_size * 6 ))
+  min_required=$(( iso_size * 5 / 2 ))
+  log_info "Estimation d'espace requis : extraction (~1x ISO) + ISO de sortie (~1x ISO) + marge 25% = $((min_required / 1024 / 1024)) Mo"
   check_disk_space "$(dirname "$WORK_ROOT")" "$min_required" \
     || { report_step "00-validate" "FAILED" "espace disque insuffisant"; return 1; }
 
@@ -54,18 +60,21 @@ module_00_validate() {
   log_info "SHA-256 = $ISO_SHA256"
   log_warn "Aucun hash officiel Microsoft n'est comparé automatiquement (nécessiterait de télécharger l'ISO officielle pour comparaison, ce que ce projet ne fait pas). Vérifie toi-même ce hash contre la page officielle de téléchargement Microsoft si besoin."
 
-  log_info "Lecture de la structure ISO9660/UDF via xorriso (validation non destructive)..."
+  log_info "Lecture de la structure de l'ISO via xorriso (validation non destructive, système de boot)..."
   if ! xorriso -indev "$ISO_PATH" -report_system_area plain >>"$LOG_FILE" 2>&1; then
     log_error "xorriso n'a pas pu lire l'ISO — fichier probablement corrompu ou pas une image ISO valide."
     report_step "00-validate" "FAILED" "ISO illisible par xorriso"
     return 1
   fi
 
-  # Une ISO Windows 11 contient normalement sources/install.wim ou sources/install.esd
+  # IMPORTANT : les ISO Windows modernes (>4 Go) sont en UDF pur, sans arborescence ISO9660
+  # complète — `xorriso -find` ne verrait quasiment aucun fichier sur ce type d'image (vérifié
+  # en pratique). On utilise `7z l` (lecteur UDF fonctionnel, vérifié) pour vérifier la
+  # présence de sources/install.wim ou sources/install.esd.
   local listing
-  listing=$(xorriso -indev "$ISO_PATH" -find / -name 'install.wim' -o -name 'install.esd' 2>>"$LOG_FILE")
+  listing=$(7z l "$ISO_PATH" 2>>"$LOG_FILE" | grep -iE 'sources[\\/](install\.wim|install\.esd)' || true)
   if [[ -z "$listing" ]]; then
-    log_error "Aucun sources/install.wim ni sources/install.esd trouvé dans l'ISO — ce n'est probablement pas une ISO d'installation Windows standard."
+    log_error "Aucun sources/install.wim ni sources/install.esd trouvé dans l'ISO (via 7z l) — ce n'est probablement pas une ISO d'installation Windows standard."
     report_step "00-validate" "FAILED" "install.wim/install.esd absent"
     return 1
   fi

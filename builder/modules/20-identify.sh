@@ -6,6 +6,10 @@ module_20_identify() {
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
     log_info "(dry-run) recherche de sources/install.wim ou sources/install.esd sous $EXTRACT_DIR"
+    # Valeurs fictives pour que les étapes dry-run suivantes (30-mount etc.) puissent
+    # afficher un plan cohérent sans planter sous 'set -u'.
+    WIM_PATH="$EXTRACT_DIR/sources/install.wim"
+    WIM_INDEX="${WIM_INDEX:-1}"
     report_step "20-identify" "DRY-RUN"
     return 0
   fi
