@@ -2,7 +2,7 @@
 
 Basé sur `docs/VIDEO_ANALYSIS.md`. États possibles : `PLANNED` (pas commencé), `PROTOTYPE` (ébauche non fiable), `PARTIAL` (fonctionne partiellement), `IMPLEMENTED` (fonctionne), `TESTED` (fonctionne + vérifié en VM Windows), `CONCEPT ONLY` (non réalisable proprement — alternative documentée), `IMPLEMENTABLE` (déjà natif à Windows 11, réglage/registre suffisant, non encore branché au builder).
 
-**Au 04/09/2026, aucune fonctionnalité n'a le statut `IMPLEMENTED` ou `TESTED` : le projet est en Phase 1 (analyse). Ce document sera mis à jour au fur et à mesure du développement (Phases 2-7).**
+**Au 04/09/2026 : le pipeline de build (Phase 2) est validé de bout en bout contre une vraie ISO Windows 11 25H2 officielle. La première fonctionnalité UI réelle (fond d'écran par défaut, voir Desktop ci-dessous) est `IMPLEMENTED` — mécanisme confirmé par extraction/lecture directe du WIM généré, mais boot réel en VM `PLANNED` (pas encore testé). Tout le reste du tableau ci-dessous reste `PLANNED` tant que non implémenté.**
 
 ---
 
@@ -10,7 +10,8 @@ Basé sur `docs/VIDEO_ANALYSIS.md`. États possibles : `PLANNED` (pas commencé)
 
 | Fonctionnalité | État | Faisabilité | Implémentation envisagée |
 |---|---|---|---|
-| Fond d'écran "vagues" animé (bureau) | `PLANNED` | Facile (image statique) / Difficile (vraie animation de fond) | Fond statique dans `assets/wallpapers/` d'abord (facile) ; version animée = wallpaper engine tiers (ex. Lively Wallpaper), à documenter comme dépendance optionnelle |
+| Fond d'écran par défaut du bureau (image statique façon "vagues" bleu/magenta) | `IMPLEMENTED` | Facile | `builder/modules/45-wallpaper.sh` : remplace `Windows/Web/Wallpaper/Windows/img0.jpg` (fond par défaut, chemin confirmé sur une vraie ISO Win11 25H2) par `assets/wallpapers/furax-wave-primary.jpg` (redimensionné en cover-fit), + configure `HKCU\Control Panel\Desktop` du profil `Default` (WallPaper/WallpaperStyle=10/TileWallpaper=0) pour que les nouveaux comptes l'utilisent en mode Remplir. Vérifié : fichier remplacé et clés registre confirmées présentes dans le WIM généré (extraction directe). **Non encore vérifié : rendu réel au premier login dans une VM** (`TESTED` réservé à ça). |
+| Fond d'écran "vagues" **animé** (vidéo/parallaxe en fond de bureau) | `PLANNED` | Difficile | Nécessiterait un wallpaper engine tiers (ex. Lively Wallpaper) — pas dans ce projet à ce stade |
 | Logo "Win12" géant flottant sur le bureau | `PLANNED` | Facile | Asset intégré au wallpaper, ou petit widget desktop overlay |
 | Thème par défaut (dégradé magenta/bleu, coins arrondis, accent color) | `PLANNED` | Facile | Fichier `.theme` + `DWM` registry (`system/registry/`) |
 | Gestion des fenêtres (Snap, coins arrondis, ombres) | `IMPLEMENTABLE` | Facile | Déjà natif à Windows 11 (Snap Layouts, coins arrondis DWM) — juste s'assurer que les réglages par défaut du profil `full.yaml` les activent |

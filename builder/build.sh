@@ -102,7 +102,13 @@ if grep -q '^\s*trivial_marker:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_TRIVIAL_MARKER=0
 fi
+if grep -q '^\s*wallpaper:\s*true' "$PROFILE_FILE"; then
+  FEATURE_WALLPAPER=1
+else
+  FEATURE_WALLPAPER=0
+fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
+log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 
 # --- Pipeline ---
 module_00_validate
@@ -115,6 +121,13 @@ if [[ "$FEATURE_TRIVIAL_MARKER" -eq 1 ]]; then
 else
   log_step "40-customize-minimal : SKIPPED (désactivé par le profil $PROFILE)"
   report_step "40-customize-minimal" "SKIPPED" "désactivé par le profil"
+fi
+
+if [[ "$FEATURE_WALLPAPER" -eq 1 ]]; then
+  module_45_wallpaper
+else
+  log_step "45-wallpaper : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "45-wallpaper" "SKIPPED" "désactivé par le profil"
 fi
 
 module_50_unmount

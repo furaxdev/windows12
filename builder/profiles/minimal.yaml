@@ -9,3 +9,6 @@ name: minimal
 features:
   # Écrit un fichier marqueur + une valeur de registre de test dans l'image (preuve de mécanisme).
   trivial_marker: true
+  # Remplace le fond d'écran par défaut du bureau (assets/wallpapers/) + configure le profil
+  # utilisateur par défaut pour l'utiliser. Voir builder/modules/45-wallpaper.sh.
+  wallpaper: true
