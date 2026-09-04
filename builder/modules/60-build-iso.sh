@@ -39,8 +39,12 @@ module_60_build_iso() {
     return 1
   fi
 
+  # xorriso écrit ce rapport sur stderr, pas stdout — on doit fusionner les deux (2>&1)
+  # avant de parser, sinon le pipe ne capte rien et le Volume ID retombe systématiquement
+  # sur la valeur par défaut (bug réel rencontré et corrigé après un premier build de test).
   local volid
-  volid=$(xorriso -indev "$ISO_PATH" -report_system_area plain 2>>"$LOG_FILE" | sed -n "s/^Volume id *: *'\(.*\)'/\1/p")
+  volid=$(xorriso -indev "$ISO_PATH" -report_system_area plain 2>&1 | tee -a "$LOG_FILE" \
+            | sed -n "s/^Volume id *: *'\(.*\)'/\1/p")
   [[ -z "$volid" ]] && volid="FURAX_WIN12_BETA"
   log_info "Volume ID réutilisé de l'ISO source : $volid"
 

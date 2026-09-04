@@ -45,13 +45,22 @@ module_70_validate_output() {
   fi
   log_info "OK : $listing"
 
-  log_info "Vérification de la présence du fichier marqueur Furax-Windows-12-Beta.txt..."
-  local marker_found
-  marker_found=$(xorriso -indev "$OUT_ISO" -find / -name 'Furax-Windows-12-Beta.txt' 2>>"$LOG_FILE")
-  if [[ -z "$marker_found" ]]; then
-    log_warn "Fichier marqueur absent de l'ISO générée — la personnalisation du module 40 n'a peut-être pas été committée correctement."
-  else
-    log_info "Fichier marqueur présent : $marker_found"
+  # Le fichier marqueur (module 40) est écrit DANS l'image Windows montée, donc il finit
+  # DANS sources/install.wim — pas comme fichier "en vrac" dans l'arborescence de l'ISO.
+  # Chercher son nom via `xorriso -find` sur l'ISO (qui ne voit que les fichiers hors WIM)
+  # ne peut donc jamais le trouver — c'était une erreur de vérification, pas un vrai échec
+  # du mécanisme (corrigé après l'avoir constaté sur un premier build réel : le marqueur
+  # était bien présent en interrogeant install.wim directement avec wimlib-imagex).
+  local marker_found="non vérifié"
+  if [[ "${FEATURE_TRIVIAL_MARKER:-0}" -eq 1 && -n "${WIM_PATH:-}" && -f "$WIM_PATH" ]]; then
+    log_info "Vérification de la présence du fichier marqueur DANS $WIM_PATH (pas dans l'arborescence externe de l'ISO)..."
+    if wimlib-imagex extract "$WIM_PATH" "$WIM_INDEX" "/Furax-Windows-12-Beta.txt" --to-stdout >>"$LOG_FILE" 2>&1; then
+      marker_found="present"
+      log_info "Fichier marqueur confirmé à l'intérieur de l'image Windows (sources/install.wim)."
+    else
+      marker_found="absent"
+      log_warn "Fichier marqueur absent de l'image Windows — la personnalisation du module 40 n'a peut-être pas été committée correctement."
+    fi
   fi
 
   OUT_SHA256=$(sha256sum "$OUT_ISO" | awk '{print $1}')
@@ -59,6 +68,6 @@ module_70_validate_output() {
 
   log_warn "Validation structurelle uniquement : le boot réel de cette ISO N'A PAS été vérifié par ce module. Utilise vm/test-vm.sh pour un test de démarrage en VM (voir docs/TESTING.md) avant de considérer l'ISO comme fiable."
 
-  report_step "70-validate-output" "OK" "SHA-256=$OUT_SHA256 marqueur=$([[ -n "$marker_found" ]] && echo present || echo absent)"
+  report_step "70-validate-output" "OK" "SHA-256=$OUT_SHA256 marqueur=$marker_found"
   return 0
 }
