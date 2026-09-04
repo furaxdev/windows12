@@ -1,0 +1,11 @@
+# Profil "minimal" — Phase 2 : builder minimal, preuve de mécanisme uniquement.
+# Aucune fonctionnalité UI listée dans docs/FEATURES.md n'est encore branchée à un profil :
+# ce fichier ne fait aujourd'hui qu'activer/désactiver l'étape de preuve de mécanisme (40).
+# Les phases suivantes ajouteront ici les vrais flags (start_menu, taskbar, wallpapers, etc.)
+# au fur et à mesure qu'ils seront réellement implémentés — pas avant.
+
+name: minimal
+
+features:
+  # Écrit un fichier marqueur + une valeur de registre de test dans l'image (preuve de mécanisme).
+  trivial_marker: true

@@ -1,0 +1,10 @@
+# Profil "full" — identique à "minimal" pour l'instant (Phase 2).
+#
+# ⚠️ Ce fichier NE DOIT PAS lister de fonctionnalités UI tant qu'elles ne sont pas réellement
+# implémentées dans le builder (voir la règle absolue du projet : docs/FEATURES.md est la seule
+# source de vérité sur l'état réel de chaque fonctionnalité). Il sera étoffé phase après phase.
+
+name: full
+
+features:
+  trivial_marker: true
