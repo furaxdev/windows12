@@ -1,0 +1,21 @@
+# Furax Windows 12 Beta — build artifacts, never versioned
+work/
+out/
+*.iso
+*.wim
+*.esd
+*.vhdx
+*.qcow2
+*.log
+build/_work/
+build/_out/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
