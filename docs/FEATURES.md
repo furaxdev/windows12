@@ -2,7 +2,7 @@
 
 Basé sur `docs/VIDEO_ANALYSIS.md`. États possibles : `PLANNED` (pas commencé), `PROTOTYPE` (ébauche non fiable), `PARTIAL` (fonctionne partiellement), `IMPLEMENTED` (fonctionne), `TESTED` (fonctionne + vérifié en VM Windows), `CONCEPT ONLY` (non réalisable proprement — alternative documentée), `IMPLEMENTABLE` (déjà natif à Windows 11, réglage/registre suffisant, non encore branché au builder).
 
-**Au 04/09/2026 : le pipeline de build (Phase 2) est validé de bout en bout contre une vraie ISO Windows 11 25H2 officielle. La première fonctionnalité UI réelle (fond d'écran par défaut, voir Desktop ci-dessous) est `IMPLEMENTED` — mécanisme confirmé par extraction/lecture directe du WIM généré, mais boot réel en VM `PLANNED` (pas encore testé). Tout le reste du tableau ci-dessous reste `PLANNED` tant que non implémenté.**
+**Au 05/09/2026 : le pipeline de build (Phase 2) est validé de bout en bout contre une vraie ISO Windows 11 25H2 officielle.** Fond d'écran, thème sombre/accent, branding "By FuraxDev" (winver) sont `IMPLEMENTED` — mécanismes confirmés par extraction/lecture directe du WIM généré. Le **rollback** de ces personnalisations (registre) est `TESTED` : 12/12 vérifications automatiques passées via `builder/tools/test_rollback_offline.sh` contre de vraies ruches Windows 11 25H2 (voir `docs/TESTING.md`). **Le boot réel en VM/matériel reste non confirmé** (limite de cet environnement de développement, voir `docs/TROUBLESHOOTING.md`) — c'est la prochaine validation à faire. Tout le reste du tableau ci-dessous reste `PLANNED` tant que non implémenté.
 
 ---
 

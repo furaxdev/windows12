@@ -27,6 +27,7 @@ Ces vérifications sont intégrées directement dans `builder/modules/00-*.sh` �
 | La valeur de registre de test est bien écrite offline via hivex | `PARTIAL` — dépend de la disponibilité de `python3.12`+`hivex` dans l'environnement ; si absent, l'étape est `SKIPPED` proprement (jamais simulée comme réussie) |
 | Policies/GPO appliquées | `PLANNED` (rien n'existe encore dans `system/policies/`) |
 | Services/configuration par défaut | `PLANNED` |
+| **Rollback** (annulation branding + thème) | `TESTED` — `builder/tools/test_rollback_offline.sh` : 12/12 vérifications passées (05/09/2026) contre de vraies ruches SOFTWARE/NTUSER.DAT extraites de l'ISO Windows 11 25H2 officielle. Applique le forward (mêmes appels que `42-branding.sh`/`46-theme.sh`), vérifie par `hivexget`, applique le rollback (`hivex_delete_value.py`/`hivex_delete_key.py`), revérifie que tout redevient absent. Couvre le registre uniquement — le script PowerShell `scripts/rollback/Rollback-FuraxWindows12.ps1` destiné à l'utilisateur final n'a lui-même pas pu être exécuté dans un vrai Windows démarré (pas de boot possible dans cet environnement), voir ses notes internes. |
 
 ## 3. Runtime tests (VM)
 

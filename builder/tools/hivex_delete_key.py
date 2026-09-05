@@ -44,7 +44,9 @@ def main():
         print(f"INFO: clé déjà absente : {parent_path}\\{child_name} — rien à supprimer.")
         return 0
 
-    h.node_delete_child(node, child_name)
+    # node_delete_child() prend le NŒUD ENFANT lui-même à supprimer, pas (parent, nom) —
+    # vérifié empiriquement, contrairement à ce qu'une lecture rapide de l'API suggère.
+    h.node_delete_child(target)
     h.commit(None)
     print(f"OK: clé {parent_path}\\{child_name} supprimée de {hive_path}")
     return 0
