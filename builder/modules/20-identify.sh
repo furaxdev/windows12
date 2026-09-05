@@ -37,6 +37,19 @@ module_20_identify() {
   WIM_INDEX="${WIM_INDEX:-1}"
   log_info "Index d'image utilisé : $WIM_INDEX (par défaut 1, surchargeable via --wim-index)"
 
-  report_step "20-identify" "OK" "$WIM_PATH index=$WIM_INDEX"
+  # Métadonnées de l'édition, capturées pour le rapport de build final (docs/BUILD.md §rapport).
+  local image_info
+  image_info=$(wimlib-imagex info "$WIM_PATH" "$WIM_INDEX" 2>>"$LOG_FILE")
+  WIN_PRODUCT_NAME=$(echo "$image_info" | sed -n 's/^Product Name: *//p' | head -1)
+  WIN_EDITION_ID=$(echo "$image_info" | sed -n 's/^Edition ID: *//p' | head -1)
+  WIN_ARCHITECTURE=$(echo "$image_info" | sed -n 's/^Architecture: *//p' | head -1)
+  WIN_MAJOR_VERSION=$(echo "$image_info" | sed -n 's/^Major Version: *//p' | head -1)
+  WIN_MINOR_VERSION=$(echo "$image_info" | sed -n 's/^Minor Version: *//p' | head -1)
+  WIN_BUILD=$(echo "$image_info" | sed -n 's/^Build: *//p' | head -1)
+  WIN_SP_BUILD=$(echo "$image_info" | sed -n 's/^Service Pack Build: *//p' | head -1)
+  WIN_LANGUAGES=$(echo "$image_info" | sed -n 's/^Languages: *//p' | head -1)
+  log_info "Édition détectée : $WIN_PRODUCT_NAME / $WIN_EDITION_ID / $WIN_ARCHITECTURE / version $WIN_MAJOR_VERSION.$WIN_MINOR_VERSION build $WIN_BUILD.$WIN_SP_BUILD"
+
+  report_step "20-identify" "OK" "$WIM_PATH index=$WIM_INDEX ($WIN_EDITION_ID $WIN_ARCHITECTURE)"
   return 0
 }

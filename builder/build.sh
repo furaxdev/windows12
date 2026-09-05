@@ -40,7 +40,7 @@ Options:
   --profile <nom>       Profil de fonctionnalités : minimal (défaut) | full
   --wim-index <N>       Index de l'image dans install.wim/install.esd (défaut : 1)
   --work-dir <chemin>   Dossier de travail (défaut : $WORK_ROOT)
-  --out <chemin>        Chemin de l'ISO générée (défaut : $OUT_DIR/furax-windows-12-beta.iso)
+  --out <chemin>        Chemin de l'ISO générée (défaut : $OUT_DIR/FuraxWindows12-Beta-x64.iso)
   --keep-work           Ne pas supprimer le dossier de travail après un build réussi
   --dry-run             N'exécute aucune commande destructive/de montage, affiche le plan
   -h, --help            Affiche cette aide
@@ -81,7 +81,7 @@ LOG_FILE="$WORK_DIR/build.log"
 REPORT_FILE="$OUT_DIR/rapport-build-$BUILD_ID.txt"
 : > "$LOG_FILE"
 
-[[ -z "$OUT_ISO" ]] && OUT_ISO="$OUT_DIR/furax-windows-12-beta-$BUILD_ID.iso"
+[[ -z "$OUT_ISO" ]] && OUT_ISO="$OUT_DIR/FuraxWindows12-Beta-x64.iso"
 
 BUILD_START_TS="$(_log_ts)"
 
@@ -117,10 +117,16 @@ if grep -q '^\s*theme:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_THEME=0
 fi
+if grep -q '^\s*taskbar_floating_pill_experimental:\s*true' "$PROFILE_FILE"; then
+  FEATURE_TASKBAR_EXPERIMENTAL=1
+else
+  FEATURE_TASKBAR_EXPERIMENTAL=0
+fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
+log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — documentation uniquement, jamais d'exécution auto)"
 
 # --- Pipeline ---
 module_00_validate
@@ -155,6 +161,17 @@ else
   log_step "46-theme : SKIPPED (désactivé par le profil $PROFILE)"
   report_step "46-theme" "SKIPPED" "désactivé par le profil"
 fi
+
+if [[ "$FEATURE_TASKBAR_EXPERIMENTAL" -eq 1 ]]; then
+  module_48_taskbar_experimental
+else
+  log_step "48-taskbar-experimental : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
+  report_step "48-taskbar-experimental" "SKIPPED" "expérimental, désactivé par défaut"
+fi
+
+# Toujours déposé (zéro risque : dépôt de fichier, aucune exécution automatique) — c'est le
+# contrepoint direct des personnalisations réellement appliquées ci-dessus.
+module_49_rollback_scripts
 
 module_50_unmount
 module_60_build_iso

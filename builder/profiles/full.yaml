@@ -11,3 +11,7 @@ features:
   wallpaper: true
   branding: true
   theme: true
+  # EXPERIMENTAL / UNTESTED — voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md.
+  # Reste désactivé même dans le profil "full" : ce n'est pas un tweak natif vérifié,
+  # c'est une doc pour une manip manuelle post-installation. Ne pas activer sans lire.
+  taskbar_floating_pill_experimental: false

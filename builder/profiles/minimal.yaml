@@ -16,3 +16,8 @@ features:
   branding: true
   # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.
   theme: true
+  # EXPERIMENTAL / UNTESTED — barre des tâches "pilule flottante" via Windhawk.
+  # Désactivé par défaut : dépose uniquement de la documentation, n'installe/n'exécute
+  # RIEN automatiquement. Voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md avant de
+  # l'activer. Ne mets PAS "true" ici sans avoir lu ce README.
+  taskbar_floating_pill_experimental: false

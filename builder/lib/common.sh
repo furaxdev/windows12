@@ -6,8 +6,10 @@
 
 _log_ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
+WARNING_LINES=()
+
 log_info()  { printf '[%s] [INFO ] %s\n'  "$(_log_ts)" "$*" | tee -a "${LOG_FILE:-/dev/null}" ; }
-log_warn()  { printf '[%s] [WARN ] %s\n'  "$(_log_ts)" "$*" | tee -a "${LOG_FILE:-/dev/null}" >&2 ; }
+log_warn()  { printf '[%s] [WARN ] %s\n'  "$(_log_ts)" "$*" | tee -a "${LOG_FILE:-/dev/null}" >&2 ; WARNING_LINES+=("$*") ; }
 log_error() { printf '[%s] [ERROR] %s\n'  "$(_log_ts)" "$*" | tee -a "${LOG_FILE:-/dev/null}" >&2 ; }
 log_step()  { printf '[%s] [STEP ] === %s ===\n' "$(_log_ts)" "$*" | tee -a "${LOG_FILE:-/dev/null}" ; }
 log_cmd()   { printf '[%s] [CMD  ] %s\n'  "$(_log_ts)" "$*" | tee -a "${LOG_FILE:-/dev/null}" ; }
@@ -33,18 +35,59 @@ report_step() {
 
 write_report() {
   local report_file="$1"
+  local out_size_mo="N/A"
+  if [[ -n "${OUT_ISO:-}" && -f "${OUT_ISO:-}" ]]; then
+    out_size_mo="$(( $(stat -c '%s' "$OUT_ISO") / 1024 / 1024 )) Mo"
+  fi
   {
-    echo "Furax Windows 12 Beta — Rapport de build"
-    echo "ISO source     : ${ISO_PATH:-N/A}"
-    echo "Profil         : ${PROFILE:-N/A}"
-    echo "Mode           : $([[ "${DRY_RUN:-0}" -eq 1 ]] && echo 'DRY-RUN (aucune modification)' || echo 'RÉEL')"
-    echo "Répertoire dev : ${WORK_DIR:-N/A}"
-    echo "ISO générée    : ${OUT_ISO:-N/A}"
+    echo "======================================================================"
+    echo "Furax Windows 12 Beta — Rapport de build (Release Candidate)"
+    echo "======================================================================"
+    echo ""
+    echo "--- Build ---"
+    echo "Build ID       : ${BUILD_ID:-N/A}"
     echo "Démarré        : ${BUILD_START_TS:-N/A}"
     echo "Terminé        : $(_log_ts)"
+    echo "Profil         : ${PROFILE:-N/A}"
+    echo "Mode           : $([[ "${DRY_RUN:-0}" -eq 1 ]] && echo 'DRY-RUN (aucune modification)' || echo 'RÉEL')"
     echo ""
-    echo "Étapes :"
+    echo "--- Source Windows ---"
+    echo "ISO source     : ${ISO_PATH:-N/A}"
+    echo "SHA-256 source : ${ISO_SHA256:-N/A}"
+    echo "Produit        : ${WIN_PRODUCT_NAME:-N/A}"
+    echo "Édition        : ${WIN_EDITION_ID:-N/A}"
+    echo "Architecture   : ${WIN_ARCHITECTURE:-N/A}"
+    echo "Version        : ${WIN_MAJOR_VERSION:-N/A}.${WIN_MINOR_VERSION:-N/A} (build ${WIN_BUILD:-N/A}.${WIN_SP_BUILD:-N/A})"
+    echo "Langues        : ${WIN_LANGUAGES:-N/A}"
+    echo ""
+    echo "--- Fonctionnalités activées / désactivées (profil ${PROFILE:-N/A}) ---"
+    echo "trivial_marker (preuve de mécanisme)         : $([[ "${FEATURE_TRIVIAL_MARKER:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
+    echo "branding (\"By FuraxDev\" winver + OEM)         : $([[ "${FEATURE_BRANDING:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
+    echo "wallpaper (fond d'écran par défaut)          : $([[ "${FEATURE_WALLPAPER:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
+    echo "theme (sombre + transparence + accent)       : $([[ "${FEATURE_THEME:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
+    echo "taskbar_floating_pill_experimental           : $([[ "${FEATURE_TASKBAR_EXPERIMENTAL:-0}" -eq 1 ]] && echo "ACTIVÉ (EXPERIMENTAL/UNTESTED)" || echo désactivé)"
+    echo ""
+    echo "--- Résultat ---"
+    echo "ISO générée    : ${OUT_ISO:-N/A}"
+    echo "Taille ISO     : ${out_size_mo}"
+    echo "SHA-256 ISO    : ${OUT_SHA256:-N/A}"
+    echo ""
+    echo "--- Étapes du pipeline ---"
     printf '%s\n' "${REPORT_LINES[@]}"
+    echo ""
+    if [[ ${#WARNING_LINES[@]} -gt 0 ]]; then
+      echo "--- Warnings (${#WARNING_LINES[@]}) ---"
+      printf -- '- %s\n' "${WARNING_LINES[@]}"
+    else
+      echo "--- Warnings : aucun ---"
+    fi
+    echo ""
+    echo "--- Rappel honnête ---"
+    echo "Ce rapport atteste que les étapes ci-dessus ont réellement été exécutées et que"
+    echo "les valeurs/fichiers modifiés ont été vérifiés par relecture directe dans le WIM"
+    echo "généré (registre via hivexget, fichiers via wimlib-imagex extract). Il n'atteste"
+    echo "PAS d'un boot réel confirmé de cette ISO précise ni d'un rendu visuel dans un"
+    echo "bureau Windows démarré — voir docs/TESTING.md pour l'état exact des validations."
   } > "$report_file"
   log_info "Rapport écrit : $report_file"
 }
@@ -118,6 +161,9 @@ cleanup_on_exit() {
 
   if [[ -n "${REPORT_FILE:-}" ]]; then
     write_report "$REPORT_FILE" || true
+    if [[ -n "${OUT_DIR:-}" ]]; then
+      cp -f "$REPORT_FILE" "$OUT_DIR/FuraxWindows12-Beta-x64.rapport.txt" 2>/dev/null || true
+    fi
   fi
 
   if [[ -n "${WORK_DIR:-}" && -d "${WORK_DIR:-}" ]]; then
