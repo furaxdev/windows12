@@ -13,7 +13,7 @@ Basé sur `docs/VIDEO_ANALYSIS.md`. États possibles : `PLANNED` (pas commencé)
 | Fond d'écran par défaut du bureau (image statique façon "vagues" bleu/magenta) | `IMPLEMENTED` | Facile | `builder/modules/45-wallpaper.sh` : remplace `Windows/Web/Wallpaper/Windows/img0.jpg` (fond par défaut, chemin confirmé sur une vraie ISO Win11 25H2) par `assets/wallpapers/furax-wave-primary.jpg` (redimensionné en cover-fit), + configure `HKCU\Control Panel\Desktop` du profil `Default` (WallPaper/WallpaperStyle=10/TileWallpaper=0) pour que les nouveaux comptes l'utilisent en mode Remplir. Vérifié : fichier remplacé et clés registre confirmées présentes dans le WIM généré (extraction directe). **Non encore vérifié : rendu réel au premier login dans une VM** (`TESTED` réservé à ça). |
 | Fond d'écran "vagues" **animé** (vidéo/parallaxe en fond de bureau) | `PLANNED` | Difficile | Nécessiterait un wallpaper engine tiers (ex. Lively Wallpaper) — pas dans ce projet à ce stade |
 | Logo "Win12" géant flottant sur le bureau | `PLANNED` | Facile | Asset intégré au wallpaper, ou petit widget desktop overlay |
-| Thème par défaut (dégradé magenta/bleu, coins arrondis, accent color) | `PLANNED` | Facile | Fichier `.theme` + `DWM` registry (`system/registry/`) |
+| Thème par défaut sombre + accent coloré (dérivé du fond d'écran) | `IMPLEMENTED` | Facile | `builder/modules/46-theme.sh` : `AppsUseLightTheme`/`SystemUsesLightTheme`=0, `EnableTransparency`=1, `ColorPrevalence`=1, `AutoColorization`=1 (profil `Default`). Vérifié par lecture directe de `NTUSER.DAT` dans le WIM généré. **Non encore vérifié visuellement en VM.** Ne reproduit PAS un dégradé magenta/bleu réel sur les surfaces (Windows n'a qu'une seule couleur d'accent unie, pas de dégradé natif) — l'accent est une couleur unie extraite automatiquement du fond d'écran. |
 | Gestion des fenêtres (Snap, coins arrondis, ombres) | `IMPLEMENTABLE` | Facile | Déjà natif à Windows 11 (Snap Layouts, coins arrondis DWM) — juste s'assurer que les réglages par défaut du profil `full.yaml` les activent |
 | Widgets desktop persistants (météo mini-widget visible même hors du panneau Widgets) | `PLANNED` | Moyenne | App tierce légère (`apps/`) ou intégration Rainmeter/Lively, documentée comme dépendance tierce optionnelle |
 | Interactions bureau (clic droit, icônes) | `IMPLEMENTABLE` | Facile | Stock Windows 11, non modifié |
@@ -34,9 +34,9 @@ Basé sur `docs/VIDEO_ANALYSIS.md`. États possibles : `PLANNED` (pas commencé)
 
 | Fonctionnalité | État | Faisabilité | Implémentation envisagée |
 |---|---|---|---|
-| Position (bas, centrée) | `IMPLEMENTABLE` | Facile | Déjà le comportement par défaut de Win11 (icônes centrées) |
-| Alignement centré ↔ gauche | `IMPLEMENTABLE` | Facile | Registre natif `TaskbarAl` |
-| Barre flottante en pilule avec marges | `PLANNED` | Moyenne/Difficile | Nécessite un patch de shell tiers (ex. Windhawk + mod compatible) — **à évaluer avant intégration, avec avertissement clair sur la fragilité aux mises à jour Windows** |
+| Position (bas, centrée) | `IMPLEMENTED` | Facile | `builder/modules/46-theme.sh` : `TaskbarAl`=1 (icônes centrées, déjà le défaut Win11, réglé explicitement dans le profil `Default`) |
+| Couleur d'accent visible sur la barre (fond sombre + teinte dérivée du wallpaper) | `IMPLEMENTED` | Facile | `builder/modules/46-theme.sh` : `ColorPrevalence`=1 + `AutoColorization`=1. Vérifié par lecture registre ; rendu visuel réel **non encore vérifié en VM**. |
+| Barre flottante en pilule avec marges (coins très arrondis, détachée des bords) | `PLANNED` | Moyenne/Difficile | Nécessite un patch de shell tiers (ex. Windhawk + mod compatible) — **à évaluer avant intégration, avec avertissement clair sur la fragilité aux mises à jour Windows**. Pas fait à ce stade : risque de casser l'explorer.exe si mal packagé, nécessite des tests approfondis avant d'être proposé par défaut. |
 | Widget météo intégré dans la barre | `PLANNED` | Moyenne | Dépend du même mécanisme de patch shell |
 | Icônes (style, espacement) | `PARTIAL` | Facile (via thème d'icônes) | Pack d'icônes custom dans `assets/icons/` |
 | Animations | `PARTIAL` | Facile | Natif Win11 en grande partie |
@@ -104,6 +104,14 @@ Basé sur `docs/VIDEO_ANALYSIS.md`. États possibles : `PLANNED` (pas commencé)
 | Login — salutation dynamique | `CONCEPT ONLY` | Difficile | `LogonUI` fermé, non modifiable proprement |
 | Login — informations système affichées | `IMPLEMENTABLE` | Facile | Comportement déjà natif (nom de compte) |
 | Animations (déverrouillage, transition blur) | `IMPLEMENTABLE` | Facile | Natif Win11 (effet Acrylic déjà présent) |
+
+## 🏷️ Branding "Furax"
+
+| Fonctionnalité | État | Faisabilité | Implémentation envisagée |
+|---|---|---|---|
+| "By FuraxDev" dans la boîte de dialogue "About Windows" (winver) | `IMPLEMENTED` | Facile | `builder/modules/42-branding.sh` : `RegisteredOwner`=Furax / `RegisteredOrganization`="By FuraxDev" (`HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`) — mécanisme standard Windows (licence affichée dans winver), pas un patch. Vérifié par lecture directe de la ruche SOFTWARE dans le WIM généré. **Rendu visuel réel dans winver non encore vérifié en VM.** |
+| Informations OEM (fabricant/modèle) dans Paramètres | `PARTIAL` | Facile | `builder/modules/42-branding.sh` : `OEMInformation` (Manufacturer/Model/SupportURL) — mécanisme standard de branding OEM, écriture confirmée en registre, mais **son emplacement d'affichage exact dans les Paramètres Windows 11 modernisés n'a pas été confirmé visuellement** (le design "About" de Win11 a beaucoup changé depuis Win10 où ces champs étaient plus visibles) |
+| Numéro de build / nom de produit Windows modifié en "Windows 12.1" | `CONCEPT ONLY` | Très difficile | Le nom "Windows 11" et le numéro de build sont générés dynamiquement par le noyau/`ntoskrnl.exe`+ressources système signées, pas des chaînes de registre librement éditables sans casser la validation de version utilisée par de nombreux composants système et applications. Non tenté. |
 
 ## 🎨 Design System
 

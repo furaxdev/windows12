@@ -42,6 +42,18 @@ fusermount -uz /chemin/vers/mount-dir
 
 Puis vérifie qu'aucun mount ne subsiste avec `mount | grep wimlib` ou `mountpoint /chemin/vers/mount-dir`.
 
+### `BdsDxe: failed to start ... "UEFI QEMU DVD-ROM" : Time out` dans `vm/test-vm.sh --boot-only-check`
+
+**Testé et confirmé (05/09/2026) dans l'environnement de développement sandbox de ce projet :** ce timeout apparaît de façon identique en démarrant :
+1. l'ISO Furax Windows 12 Beta générée par le pipeline, ET
+2. l'ISO Windows 11 25H2 **officielle Microsoft non modifiée**, telle quelle.
+
+Le fait que le problème soit identique sur l'ISO d'origine intacte prouve qu'il ne s'agit **pas** d'un défaut introduit par la reconstruction (`60-build-iso.sh`) — c'est une limite de l'environnement de test : `kvm-ok` y rapporte l'absence d'extensions KVM (pas de virtualisation imbriquée), donc QEMU tourne en émulation logicielle pure (TCG). Le firmware OVMF a son propre timeout interne pour la lecture du premier bloc de boot sur le lecteur CD-ROM émulé ; sous TCG, cette lecture sur une image de ~8 Go est visiblement trop lente pour passer sous ce timeout, quel que soit le `--timeout` (externe) passé au script.
+
+**Ce que ça veut dire concrètement :** le test de boot structurel (`--boot-only-check`) n'est **pas concluant** dans cet environnement précis — ni pour confirmer, ni pour infirmer qu'une ISO est bootable. Il faut le refaire sur une machine avec KVM natif disponible (`kvm-ok` doit répondre positivement) ou sur du matériel physique, où l'accélération matérielle rend la lecture du CD-ROM émulé quasi instantanée et ne devrait plus déclencher ce timeout.
+
+**Ne pas conclure d'un tel timeout, dans un environnement sans KVM, que l'ISO est cassée.**
+
 ## En cas de nouveau problème
 
 Ouvre le log complet et cherche la dernière ligne `[ERROR]` avant l'arrêt — chaque module logue explicitement la commande qui a échoué (`[CMD]`) avant de rapporter l'erreur. N'hésite pas à relancer avec `--keep-work` pour inspecter manuellement le dossier de travail après un succès (normalement supprimé automatiquement).

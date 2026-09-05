@@ -41,6 +41,8 @@ Ces vérifications sont intégrées directement dans `builder/modules/00-*.sh` �
 
 **Limite connue de cet environnement de développement précis (documentée honnêtement, à revérifier sur ta machine) :** `kvm-ok` y rapporte l'absence d'extensions KVM (pas de virtualisation imbriquée) → les tests VM y tournent uniquement en émulation logicielle TCG, ce qui est *correct* mais *lent* (potentiellement plusieurs dizaines de minutes pour atteindre l'écran de Setup). Sur une machine avec KVM natif disponible, ce sera nettement plus rapide.
 
+**Testé le 05/09/2026 :** dans cet environnement précis, `--boot-only-check` échoue systématiquement avec `BdsDxe: ... Time out` en lisant le CD-ROM UEFI — **identiquement sur l'ISO Furax générée ET sur l'ISO Windows 11 25H2 officielle non modifiée**. Ceci confirme que c'est une limite de l'environnement (TCG trop lent pour le timeout interne du firmware OVMF face à une image de ~8 Go), pas un défaut du pipeline de reconstruction. Voir `docs/TROUBLESHOOTING.md` pour le détail. **Conséquence concrète : le boot réel de l'ISO générée n'a pas pu être validé dans cette session — à refaire sur une machine avec KVM natif ou sur du matériel physique.**
+
 Objectif complet (Phase 6, pas encore automatisé) :
 
 ```

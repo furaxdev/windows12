@@ -129,7 +129,7 @@ QEMU_ARGS=(
   -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE"
   -drive "if=pflash,format=raw,file=$OVMF_VARS_INSTANCE"
   -drive "file=$DISK_PATH,if=virtio,format=qcow2"
-  -drive "file=$ISO_PATH,media=cdrom"
+  -drive "file=$ISO_PATH,media=cdrom,if=ide"
   -boot "order=d,menu=on"
   -netdev "user,id=net0"
   -device "virtio-net-pci,netdev=net0"
