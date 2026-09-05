@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Furax Windows 12 Beta — Dernière capture VM</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 16px;
+    background: #0d0a1a; color: #f1eefc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    text-align: center;
+  }
+  h1 { font-size: 15px; font-weight: 600; }
+  .meta { color: #a99fd1; font-size: 12px; margin-bottom: 16px; }
+  img {
+    max-width: 100%; border-radius: 10px; border: 1px solid #3a2d66;
+  }
+  .note {
+    max-width: 560px; margin: 20px auto 0; padding: 14px 18px;
+    background: #171233cc; border: 1px solid #3a2d66; border-radius: 12px;
+    font-size: 12px; color: #a99fd1; text-align: left; line-height: 1.6;
+  }
+  code { background: #0d0a1a; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>Furax Windows 12 Beta — Dernière capture d'écran de la VM</h1>
+  <div class="meta">Capture prise le 2026-09-05 15:44 UTC (screendump QEMU, environnement de développement du projet)</div>
+  <img src="/vm-snapshot.png" alt="Capture d'écran de la VM" />
+  <div class="note">
+    <strong>Ce n'est PAS un flux vidéo en direct.</strong> C'est une capture ponctuelle
+    (<code>screendump</code> QEMU) poussée manuellement sur ce site. Il n'y a pas de
+    rafraîchissement automatique continu depuis cet environnement de développement (limite
+    réseau documentée dans <code>docs/REMOTE_VIEWER.md</code> — les tunnels sortants type
+    ngrok/Cloudflare Tunnel n'y fonctionnent pas). Pour un vrai flux en direct et
+    interactif, utilise <a href="/">le viewer noVNC</a> avec ta propre machine + ton propre
+    tunnel (ça, ça marche, car ta machine n'a pas cette restriction réseau).
+  </div>
+</body>
+</html>
