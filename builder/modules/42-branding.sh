@@ -10,15 +10,20 @@
 #      licence ("...licensed under the Microsoft Software License Terms to: <Owner> <Org>").
 #      Mécanisme standard Windows depuis très longtemps, pas une astuce.
 # - HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation (Manufacturer/Model/
-#   SupportURL/SupportHours) -> mécanisme standard de branding OEM. Sa clé n'existe pas
-#   forcément par défaut -> créée avec --create-keys si absente.
+#   SupportURL/SupportHours) -> mécanisme de branding OEM historique (Windows 7/8/10,
+#   ancien Panneau de configuration > Système). Sa clé n'existe pas forcément par défaut
+#   -> créée avec --create-keys si absente.
 #
-# ⚠️ Honnêteté : l'apparition exacte de OEMInformation dans les Paramètres Windows 11
-# (redesign moderne) n'a PAS encore été vérifiée visuellement dans une VM démarrée — seule
-# l'écriture réussie dans le registre est confirmée par ce module. Voir docs/FEATURES.md.
+# ⚠️ Honnêteté (statut détaillé dans docs/FEATURES.md) : l'ÉCRITURE de OEMInformation est
+# confirmée (relecture réussie via hivexget dans le WIM généré), mais on n'a AUCUNE preuve
+# qu'elle s'affiche où que ce soit dans l'UI moderne de Windows 11 — le design "Paramètres >
+# Système > À propos" a changé depuis Win10 et pourrait tout simplement ne plus lire cette
+# clé du tout. Ne pas présenter ce point comme "marque visible dans les Paramètres" sans
+# test réel. Le point fiable pour la marque "Furax" est RegisteredOwner/RegisteredOrganization
+# (winver), pas OEMInformation.
 
 module_42_branding() {
-  log_step "42-branding : \"By FuraxDev\" dans winver + informations OEM"
+  log_step "42-branding : \"By FuraxDev\" dans winver + informations OEM (registre uniquement, affichage UI non confirmé)"
 
   local software_hive="$MOUNT_DIR/Windows/System32/config/SOFTWARE"
 
@@ -55,7 +60,7 @@ module_42_branding() {
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0
 
   if [[ "$ok" -eq 1 ]]; then
-    log_info "Branding écrit : RegisteredOwner=Furax, RegisteredOrganization=\"By FuraxDev\" (visible dans winver), OEMInformation (Manufacturer/Model/SupportURL)."
+    log_info "Branding écrit : RegisteredOwner=Furax, RegisteredOrganization=\"By FuraxDev\" (confirmé visible dans winver), OEMInformation (Manufacturer/Model/SupportURL) écrit en registre mais affichage dans l'UI Windows 11 NON confirmé — voir docs/FEATURES.md."
     report_step "42-branding" "OK" "RegisteredOwner/Organization + OEMInformation"
   else
     log_warn "Échec partiel de l'écriture du branding (voir $LOG_FILE)."

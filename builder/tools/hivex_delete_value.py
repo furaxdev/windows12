@@ -49,7 +49,10 @@ def main():
         if name == value_name:
             found = True
             continue
-        remaining.append({"key": name, "t": h.value_type(v)[0], "value": h.value_value(v)})
+        # Le docstring de la lib dit "retourne longueur, type et donnée" (3 valeurs) mais
+        # le binding réel de ce système retourne (type, donnée) — vérifié empiriquement.
+        vtype, vdata = h.value_value(v)
+        remaining.append({"key": name, "t": vtype, "value": vdata})
 
     if not found:
         print(f"INFO: valeur déjà absente : {key_path}\\{value_name} — rien à supprimer.")
