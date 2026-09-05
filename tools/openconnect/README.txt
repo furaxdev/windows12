@@ -1,46 +1,44 @@
 ═══════════════════════════════════════════════════════════
-  OpenConnect — shell distant HTTPS (sans SSH)
+  OpenConnect (osh) — shell distant HTTPS, sans ngrok ni SSH
 ═══════════════════════════════════════════════════════════
 
-CONCEPT :
-  Au lieu d'SSH (port 22 souvent bloqué), tout passe par HTTPS.
-  Le serveur tourne sur ton PC, ngrok expose l'URL publique,
-  le client envoie les commandes via requêtes HTTPS authentifiées.
+PRINCIPE :
+  Ton PC et le client se connectent tous les deux à Supabase
+  en HTTPS sortant. Zéro port ouvert, zéro tunnel, zéro ngrok.
 
-  Ton PC ──(localhost:7800)── ngrok ──(HTTPS)── n'importe où
+  osh (n'importe où) ──POST──▶ Supabase ◀──POLL── serveur (ton PC)
+                     ◀──POLL──          ──UPDATE──▶
 
-DÉMARRAGE (sur ton PC) :
-─────────────────────────
+DÉMARRAGE (sur ton PC, une seule fois) :
+─────────────────────────────────────────
+  python3 tools/openconnect/server.py --secret TONSECRETCHOISI
 
-  Terminal 1 — serveur :
-    python3 tools/openconnect/server.py --secret MONSECRETCHOISI
-
-  Terminal 2 — tunnel ngrok :
-    ngrok http 7800
-    # → note l'URL : https://xxxx.ngrok-free.app
+  C'est tout. Pas de ngrok, pas d'autre terminal.
 
 UTILISATION (depuis n'importe où) :
 ────────────────────────────────────
+  # One-shot
+  osh --ip=monpc@furax "ls -la ~"
+  osh --ip=monpc@furax --password=TONSECRETCHOISI "uname -a"
 
-  ./tools/openconnect/openconnect.sh https://xxxx.ngrok-free.app "COMMANDE"
+  # Shell interactif
+  osh --ip=monpc@furax
 
-  Exemples :
-    ./openconnect.sh https://xxxx.ngrok-free.app "ls ~/ISOs"
-    ./openconnect.sh https://xxxx.ngrok-free.app "./vm/launch-viewer.sh --no-browser"
-    ./openconnect.sh https://xxxx.ngrok-free.app "uname -a"
-
-  Le secret est demandé à l'entrée (invisible, jamais affiché).
+  L'hôte ("monpc") est juste un label visuel — le routage
+  passe par Supabase, pas par l'IP.
 
 SÉCURITÉ :
 ──────────
-  ✓ Le secret n'est JAMAIS transmis en clair — seul son SHA-256 est
-    comparé côté serveur (comparaison constante, anti timing-attack).
-  ✓ Le serveur n'écoute que sur 127.0.0.1 — ngrok est le seul point
-    d'entrée public.
-  ✓ Chaque requête = timeout 60s max.
-  ⚠ L'URL ngrok change à chaque relance (compte gratuit) — ne la
-    partage pas, ferme ngrok quand tu as fini.
-  ⚠ Choisis un secret long (20+ caractères) — quelqu'un qui a l'URL
-    ngrok peut brute-forcer un secret court.
+  ✓ Le secret est hashé (SHA-256) avant d'être stocké dans
+    Supabase — la valeur brute ne quitte jamais ton terminal.
+  ✓ Le serveur vérifie le hash avant d'exécuter quoi que ce soit.
+  ✓ Chaque commande est supprimée de Supabase après exécution.
+  ⚠ Choisis un secret long (20+ caractères).
+  ⚠ La clé anon Supabase est publique dans ce repo — elle
+    permet seulement d'insérer/lire dans osh_queue, pas de
+    modifier le schéma ni d'accéder à d'autres tables.
 
+RELAY :
+  Supabase project : furax-osh
+  URL : https://vohddkxqdeivqcoogtzd.supabase.co
 ═══════════════════════════════════════════════════════════

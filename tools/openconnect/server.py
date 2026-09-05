@@ -1,102 +1,95 @@
 #!/usr/bin/env python3
 """
-OpenConnect — serveur de commandes HTTPS (à lancer sur TON PC)
-Écoute en local, exposé publiquement via ngrok.
-Usage : python3 server.py --secret TON_SECRET_ICI [--port 7800]
+OpenConnect — serveur (à lancer sur TON PC)
+Pas de ngrok, pas d'SSH — tout passe par Supabase HTTPS.
+Usage : python3 server.py --secret TON_SECRET
 """
-import argparse, hashlib, hmac, json, os, subprocess, sys, time
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import argparse, hashlib, hmac, json, subprocess, sys, time, urllib.request, urllib.error
+
+SUPABASE_URL = "https://vohddkxqdeivqcoogtzd.supabase.co"
+ANON_KEY     = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaGRka3hxZGVpdnFjb29ndHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MjExNDMsImV4cCI6MjEwNDE5NzE0M30.nDc8h92CQi9x_US4FqzQN-mSL29VyRzsqKmNeLTVJLs"
+POLL_INTERVAL = 1  # seconde
 
 def sha256(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()
 
-def secure_compare(a: str, b: str) -> bool:
+def secure_eq(a: str, b: str) -> bool:
     return hmac.compare_digest(a.encode(), b.encode())
 
-SECRET_HASH = ""
+def headers():
+    return {
+        "apikey":        ANON_KEY,
+        "Authorization": f"Bearer {ANON_KEY}",
+        "Content-Type":  "application/json",
+        "Prefer":        "return=representation",
+    }
 
-class Handler(BaseHTTPRequestHandler):
-    def log_message(self, fmt, *args):
-        ts = time.strftime("%H:%M:%S")
-        print(f"  [{ts}] {fmt % args}")
+def api(method: str, path: str, body=None):
+    url  = f"{SUPABASE_URL}/rest/v1/{path}"
+    data = json.dumps(body).encode() if body else None
+    req  = urllib.request.Request(url, data=data, headers=headers(), method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"HTTP {e.code}: {e.read().decode()}")
 
-    def send_json(self, code: int, data: dict):
-        body = json.dumps(data).encode()
-        self.send_response(code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", len(body))
-        self.end_headers()
-        self.wfile.write(body)
+def fetch_pending(secret_hash: str):
+    path = f"osh_queue?status=eq.pending&secret_hash=eq.{secret_hash}&order=created_at.asc&limit=1"
+    rows = api("GET", path)
+    return rows[0] if rows else None
 
-    def do_POST(self):
-        if self.path != "/run":
-            self.send_json(404, {"error": "not found"})
-            return
+def update_row(row_id: str, stdout: str, stderr: str, returncode: int):
+    api("PATCH", f"osh_queue?id=eq.{row_id}", {
+        "status":     "done",
+        "stdout":     stdout,
+        "stderr":     stderr,
+        "returncode": returncode,
+        "updated_at": "now()",
+    })
 
-        length = int(self.headers.get("Content-Length", 0))
-        try:
-            body = json.loads(self.rfile.read(length))
-        except Exception:
-            self.send_json(400, {"error": "invalid json"})
-            return
-
-        secret = body.get("secret", "")
-        cmd    = body.get("cmd", "")
-
-        if not secure_compare(sha256(secret), SECRET_HASH):
-            self.send_json(403, {"error": "wrong secret"})
-            return
-
-        if not cmd:
-            self.send_json(400, {"error": "cmd manquant"})
-            return
-
-        try:
-            result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, timeout=60
-            )
-            self.send_json(200, {
-                "stdout":      result.stdout,
-                "stderr":      result.stderr,
-                "returncode":  result.returncode,
-            })
-        except subprocess.TimeoutExpired:
-            self.send_json(200, {"stdout": "", "stderr": "timeout (60s)", "returncode": -1})
-        except Exception as e:
-            self.send_json(500, {"error": str(e)})
-
-    def do_GET(self):
-        if self.path == "/ping":
-            self.send_json(200, {"status": "ok"})
-        else:
-            self.send_json(404, {"error": "not found"})
+def run_cmd(cmd: str):
+    try:
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
+        return r.stdout, r.stderr, r.returncode
+    except subprocess.TimeoutExpired:
+        return "", "timeout (60s)", -1
+    except Exception as e:
+        return "", str(e), -1
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--secret", required=True, help="Secret partagé (choisis-en un long)")
-    ap.add_argument("--port", type=int, default=7800)
+    ap.add_argument("--secret", required=True)
     args = ap.parse_args()
 
-    global SECRET_HASH
-    SECRET_HASH = sha256(args.secret)
-
+    sh = sha256(args.secret)
     print()
-    print("  OpenConnect — serveur de commandes")
-    print("  ════════════════════════════════════")
-    print(f"  Port local : {args.port}")
-    print(f"  Secret hash : {SECRET_HASH[:16]}…  (ne partage pas le secret, seulement l'URL ngrok)")
+    print("  OpenConnect — serveur (Supabase relay, sans ngrok)")
+    print("  ════════════════════════════════════════════════════")
+    print(f"  Relay : {SUPABASE_URL}")
+    print(f"  Hash  : {sh[:16]}…")
     print()
-    print("  Lance ngrok dans un autre terminal :")
-    print(f"    ngrok http {args.port}")
-    print()
-    print("  Ctrl+C pour arrêter.")
+    print("  En attente de commandes… (Ctrl+C pour arrêter)")
     print()
 
-    server = HTTPServer(("127.0.0.1", args.port), Handler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n  Arrêt.")
+    while True:
+        try:
+            row = fetch_pending(sh)
+            if row:
+                cmd = row["cmd"]
+                ts  = time.strftime("%H:%M:%S")
+                print(f"  [{ts}] ► {cmd}")
+                stdout, stderr, rc = run_cmd(cmd)
+                update_row(row["id"], stdout, stderr, rc)
+                print(f"  [{ts}] ✓ exit {rc}")
+            else:
+                time.sleep(POLL_INTERVAL)
+        except KeyboardInterrupt:
+            print("\n  Arrêt.")
+            break
+        except Exception as e:
+            print(f"  ⚠ Erreur poll : {e}")
+            time.sleep(3)
 
 if __name__ == "__main__":
     main()
