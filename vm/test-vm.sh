@@ -20,6 +20,7 @@ RAM_MB=4096
 CPUS=2
 BOOT_ONLY_CHECK=0
 TIMEOUT=120
+VNC_WEBSOCKET_PORT=""
 
 usage() {
   cat <<EOF
@@ -39,6 +40,12 @@ Options:
                           (l'ISO amorce-t-elle sans erreur immédiate), PAS une validation
                           complète d'installation Windows.
   --timeout <secondes>   Durée du test en mode --boot-only-check (défaut : $TIMEOUT)
+  --vnc-websocket <port> Pas de fenêtre graphique locale : expose l'écran de la VM en VNC
+                          sur un port WebSocket local (ex. 5959), consultable depuis un
+                          navigateur via un client noVNC (voir vm/web-viewer/ et
+                          docs/REMOTE_VIEWER.md). Le port n'est PAS exposé sur Internet par
+                          ce script — pour un accès distant (ex. depuis ton téléphone), il
+                          faut toi-même l'exposer via un tunnel (ngrok, Cloudflare Tunnel...).
   -h, --help             Affiche cette aide
 
 ⚠️ Ce script ne supprime ni ne réinitialise JAMAIS un disque existant sans confirmation
@@ -55,6 +62,7 @@ while [[ $# -gt 0 ]]; do
     --cpus) CPUS="$2"; shift 2 ;;
     --boot-only-check) BOOT_ONLY_CHECK=1; shift ;;
     --timeout) TIMEOUT="$2"; shift 2 ;;
+    --vnc-websocket) VNC_WEBSOCKET_PORT="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Option inconnue : $1" >&2; usage; exit 2 ;;
   esac
@@ -144,6 +152,15 @@ if [[ "$BOOT_ONLY_CHECK" -eq 1 ]]; then
     || echo "(fin du test après ${TIMEOUT}s ou arrêt de la VM — voir $SERIAL_LOG)"
   echo "Sortie série capturée dans : $SERIAL_LOG"
   exit 0
+fi
+
+if [[ -n "$VNC_WEBSOCKET_PORT" ]]; then
+  echo "Mode --vnc-websocket : écran de la VM exposé en VNC/WebSocket sur 127.0.0.1:$VNC_WEBSOCKET_PORT"
+  echo "Connecte un client noVNC dessus (voir vm/web-viewer/ + docs/REMOTE_VIEWER.md)."
+  echo "⚠️ Ce port n'écoute que sur cette machine — pour y accéder depuis ton téléphone,"
+  echo "   expose-le toi-même via un tunnel (ngrok http $VNC_WEBSOCKET_PORT, ou équivalent)."
+  echo "Ferme avec Ctrl+C pour arrêter la VM."
+  exec qemu-system-x86_64 "${QEMU_ARGS[@]}" -display none -vga virtio -vnc ":0,websocket=$VNC_WEBSOCKET_PORT"
 fi
 
 echo "Démarrage interactif de la VM (fenêtre graphique). Ferme la fenêtre QEMU pour arrêter la VM."

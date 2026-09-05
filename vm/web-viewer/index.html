@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Furax Windows 12 Beta — VM Viewer</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0d0a1a;
+    --panel: #171233cc;
+    --border: #3a2d66;
+    --text: #f1eefc;
+    --muted: #a99fd1;
+    --accent1: #4a7bf7;
+    --accent2: #c13ed6;
+    --ok: #35d07f;
+    --err: #ff5c7a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(circle at 20% 0%, #1a1440 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 10;
+    flex-wrap: wrap;
+  }
+  .logo {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    flex-shrink: 0;
+  }
+  .title { font-weight: 600; font-size: 14px; margin-right: auto; white-space: nowrap; }
+  input[type=text] {
+    flex: 1; min-width: 160px;
+    background: #0d0a1acc; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; font-family: monospace;
+  }
+  input[type=text]:focus { outline: 2px solid var(--accent1); }
+  button {
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    color: white; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary {
+    background: #ffffff14; border: 1px solid var(--border);
+  }
+  .status {
+    font-size: 12px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border); white-space: nowrap;
+  }
+  .status.connected { color: var(--ok); border-color: var(--ok); }
+  .status.error { color: var(--err); border-color: var(--err); }
+  .status.connecting { color: var(--accent1); border-color: var(--accent1); }
+
+  #screen {
+    width: 100%;
+    height: calc(100dvh - 58px);
+    display: flex; align-items: center; justify-content: center;
+    overflow: auto;
+    background: #000;
+  }
+  #screen canvas { max-width: 100%; }
+
+  .placeholder {
+    max-width: 480px; margin: 40px auto; padding: 24px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    text-align: center;
+  }
+  .placeholder h2 { margin-top: 0; font-size: 17px; }
+  .placeholder p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .placeholder code {
+    background: #0d0a1a; padding: 2px 6px; border-radius: 4px; font-size: 12px;
+  }
+  a { color: var(--accent1); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo"></div>
+    <div class="title">Furax Windows 12 Beta — VM Viewer</div>
+    <input id="wsUrl" type="text" placeholder="wss://xxxx.ngrok-free.app (URL du tunnel vers ta VM)" />
+    <button id="connectBtn">Connecter</button>
+    <button id="disconnectBtn" class="secondary" disabled>Déconnecter</button>
+    <span id="status" class="status">déconnecté</span>
+  </div>
+
+  <div id="screen">
+    <div class="placeholder" id="placeholder">
+      <h2>Pas encore connecté</h2>
+      <p>
+        Ce viewer se connecte à l'écran d'une VM QEMU tournant sur TA machine (pas sur un
+        serveur distant) via VNC/WebSocket. Il n'affiche rien tant que tu n'as pas :
+      </p>
+      <p>
+        1. Lancé la VM avec le port WebSocket exposé :<br />
+        <code>./vm/test-vm.sh --iso ton.iso --vnc-websocket 5959</code>
+      </p>
+      <p>
+        2. Exposé ce port publiquement (ex. avec <a href="https://ngrok.com" target="_blank" rel="noopener">ngrok</a>) :<br />
+        <code>ngrok http 5959</code>
+      </p>
+      <p>
+        3. Collé l'URL <code>wss://</code> obtenue ci-dessus et cliqué "Connecter".
+      </p>
+      <p>Détails complets : voir <code>docs/REMOTE_VIEWER.md</code> dans le dépôt du projet.</p>
+    </div>
+  </div>
+
+<script type="module">
+  import RFB from "https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js";
+
+  const wsUrlInput = document.getElementById("wsUrl");
+  const connectBtn = document.getElementById("connectBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  const statusEl = document.getElementById("status");
+  const screenEl = document.getElementById("screen");
+  const placeholder = document.getElementById("placeholder");
+
+  let rfb = null;
+
+  // Pré-remplit depuis le paramètre d'URL ?ws=... si présent (pratique pour partager un
+  // lien direct, ex. depuis un QR code généré côté PC).
+  const params = new URLSearchParams(location.search);
+  if (params.get("ws")) {
+    wsUrlInput.value = params.get("ws");
+  }
+
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = "status" + (cls ? " " + cls : "");
+  }
+
+  function connect() {
+    const url = wsUrlInput.value.trim();
+    if (!url) {
+      setStatus("URL manquante", "error");
+      return;
+    }
+    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
+      setStatus("L'URL doit commencer par ws:// ou wss://", "error");
+      return;
+    }
+
+    placeholder.remove();
+    setStatus("connexion…", "connecting");
+    connectBtn.disabled = true;
+
+    try {
+      rfb = new RFB(screenEl, url);
+      rfb.scaleViewport = true;
+      rfb.resizeSession = false;
+
+      rfb.addEventListener("connect", () => {
+        setStatus("connecté", "connected");
+        disconnectBtn.disabled = false;
+      });
+      rfb.addEventListener("disconnect", (e) => {
+        setStatus(e.detail && e.detail.clean ? "déconnecté" : "connexion perdue", e.detail && e.detail.clean ? "" : "error");
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+      });
+      rfb.addEventListener("credentialsrequired", () => {
+        setStatus("mot de passe VNC requis (non géré par ce viewer)", "error");
+      });
+    } catch (err) {
+      setStatus("erreur : " + err.message, "error");
+      connectBtn.disabled = false;
+    }
+  }
+
+  function disconnect() {
+    if (rfb) {
+      rfb.disconnect();
+      rfb = null;
+    }
+  }
+
+  connectBtn.addEventListener("click", connect);
+  disconnectBtn.addEventListener("click", disconnect);
+  wsUrlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") connect();
+  });
+</script>
+</body>
+</html>
