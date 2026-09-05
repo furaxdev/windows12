@@ -16,6 +16,7 @@ Ce n'est **pas** un fork du noyau Windows, **pas** un contournement d'activation
 | [`docs/BUILD.md`](docs/BUILD.md) | Comment préparer l'environnement et lancer un build |
 | [`docs/TESTING.md`](docs/TESTING.md) | Stratégie de tests (build/config/runtime) et VM de test |
 | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Diagnostic des échecs de build |
+| [`docs/ROLLBACK.md`](docs/ROLLBACK.md) | Annuler les personnalisations (fond d'écran, thème, branding) |
 | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Design system (couleurs, typo, motion...) extrait de la vidéo |
 
 ## Environnement de développement
