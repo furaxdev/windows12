@@ -61,6 +61,11 @@ module_45_wallpaper() {
     log_info "Original sauvegardé : $target_rel.stock-original"
   fi
 
+  # Note : assets/wallpapers/furax-wave-primary.jpg contient déjà son propre logo intégré
+  # par l'artiste d'origine (voir assets/wallpapers/CREDITS.md) — on ne superpose PAS en
+  # plus assets/icons/windows12-logo-fanmade.png dessus, ça créerait un doublon disgracieux
+  # (constaté visuellement lors du développement de ce module, corrigé). Le logo reste un
+  # asset disponible pour un usage futur différent (ex. icône, écran de démarrage).
   local resized="$WORK_DIR/wallpaper-resized.jpg"
   if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/prepare_wallpaper.py" "$wallpaper_src" "$resized" "$target_w" "$target_h" >>"$LOG_FILE" 2>&1; then
     log_error "Échec du redimensionnement du fond d'écran (voir $LOG_FILE)."
