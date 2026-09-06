@@ -12,6 +12,10 @@ features:
   # Remplace le fond d'écran par défaut du bureau (assets/wallpapers/) + configure le profil
   # utilisateur par défaut pour l'utiliser. Voir builder/modules/45-wallpaper.sh.
   wallpaper: true
+  # Remplace le fond d'écran de l'assistant Windows Setup (boot.wim, écran bleu au boot
+  # depuis la clé USB) — PAS le bureau une fois installé (ça, c'est "wallpaper" ci-dessus).
+  # Voir builder/modules/44-installer-background.sh.
+  installer_background: true
   # "By FuraxDev" dans winver + informations OEM. Voir builder/modules/42-branding.sh.
   branding: true
   # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.

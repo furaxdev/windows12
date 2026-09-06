@@ -9,6 +9,7 @@ name: full
 features:
   trivial_marker: true
   wallpaper: true
+  installer_background: true
   branding: true
   theme: true
   # EXPERIMENTAL / UNTESTED — voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md.

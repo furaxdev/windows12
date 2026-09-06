@@ -64,6 +64,7 @@ write_report() {
     echo "trivial_marker (preuve de mécanisme)         : $([[ "${FEATURE_TRIVIAL_MARKER:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
     echo "branding (\"By FuraxDev\" winver + OEM)         : $([[ "${FEATURE_BRANDING:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
     echo "wallpaper (fond d'écran par défaut)          : $([[ "${FEATURE_WALLPAPER:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
+    echo "installer_background (fond assistant Setup)  : $([[ "${FEATURE_INSTALLER_BACKGROUND:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
     echo "theme (sombre + transparence + accent)       : $([[ "${FEATURE_THEME:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
     echo "taskbar_floating_pill_experimental           : $([[ "${FEATURE_TASKBAR_EXPERIMENTAL:-0}" -eq 1 ]] && echo "ACTIVÉ (EXPERIMENTAL/UNTESTED)" || echo désactivé)"
     echo ""

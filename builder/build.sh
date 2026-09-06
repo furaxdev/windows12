@@ -107,6 +107,11 @@ if grep -q '^\s*wallpaper:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_WALLPAPER=0
 fi
+if grep -q '^\s*installer_background:\s*true' "$PROFILE_FILE"; then
+  FEATURE_INSTALLER_BACKGROUND=1
+else
+  FEATURE_INSTALLER_BACKGROUND=0
+fi
 if grep -q '^\s*branding:\s*true' "$PROFILE_FILE"; then
   FEATURE_BRANDING=1
 else
@@ -124,6 +129,7 @@ else
 fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
+log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BACKGROUND"
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
 log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — documentation uniquement, jamais d'exécution auto)"
@@ -131,6 +137,14 @@ log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATUR
 # --- Pipeline ---
 module_00_validate
 module_10_extract
+
+if [[ "$FEATURE_INSTALLER_BACKGROUND" -eq 1 ]]; then
+  module_44_installer_background
+else
+  log_step "44-installer-background : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "44-installer-background" "SKIPPED" "désactivé par le profil"
+fi
+
 module_20_identify
 module_30_mount
 
