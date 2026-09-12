@@ -10,7 +10,8 @@
     Chemin vers FuraxWindows12-Beta-x64.iso (ou tout autre ISO Windows).
     Si omis, cherche automatiquement dans le dossier courant.
 .PARAMETER Ram
-    RAM allouée à la VM en mégaoctets. Défaut : 4096 (4 Go).
+    RAM allouée à la VM en mégaoctets. Défaut : auto-détection (~50% de la RAM
+    disponible, borné entre 1024 et 4096 Mo) — passe une valeur explicite pour forcer.
 .PARAMETER Cores
     Nombre de cœurs CPU. Défaut : 2.
 .PARAMETER VncPort
@@ -26,7 +27,7 @@
 [CmdletBinding()]
 param(
     [string]$Iso = "",
-    [int]$Ram = 4096,
+    [int]$Ram = 0,   # 0 = auto-détection (voir plus bas)
     [int]$Cores = 2,
     [int]$VncPort = 5959,
     [int]$NgrokPort = 5959,
@@ -84,6 +85,24 @@ if (-not $ngrokCmd) {
     exit 1
 }
 Write-Ok "ngrok trouvé : $($ngrokCmd.Source)"
+
+# ─── Auto-détection RAM (si -Ram non fourni) ────────────────────────────────
+# Alloue ~50% de la RAM DISPONIBLE (pas totale) à la VM, borné entre 1024 et 4096 Mo.
+# Le but : ne jamais affamer le reste du système hôte pendant que la VM tourne — c'est
+# exactement ce qui a fait planter la VM la première fois (RAM hôte insuffisante).
+if ($Ram -le 0) {
+    try {
+        $os = Get-CimInstance Win32_OperatingSystem
+        $availMB = [int]($os.FreePhysicalMemory / 1024)
+        $Ram = [Math]::Floor($availMB / 2 / 256) * 256
+        if ($Ram -lt 1024) { $Ram = 1024 }
+        if ($Ram -gt 4096) { $Ram = 4096 }
+        Write-Ok "RAM auto-détectée : ${Ram} Mo alloués (sur ${availMB} Mo disponibles)"
+    } catch {
+        $Ram = 2048
+        Write-Warn "Détection RAM impossible, valeur par défaut prudente : ${Ram} Mo"
+    }
+}
 
 # ─── Recherche de l'ISO ─────────────────────────────────────────────────────
 Write-Step "Recherche de l'ISO..."

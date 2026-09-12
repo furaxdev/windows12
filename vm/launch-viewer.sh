@@ -6,7 +6,7 @@ set -euo pipefail
 
 VIEWER_BASE="https://furax-windows12-vm-viewer-furaxdev.vercel.app"
 NGROK_API="http://localhost:4040/api/tunnels"
-RAM=4096
+RAM=""       # vide = auto-détection (voir plus bas), sinon --ram force une valeur
 CORES=2
 VNC_PORT=5959
 ISO=""
@@ -32,6 +32,22 @@ while [[ $# -gt 0 ]]; do
     *) echo "Option inconnue : $1" >&2; exit 1 ;;
   esac
 done
+
+# ─── Auto-détection RAM (si --ram non fourni) ────────────────────────────────
+# Alloue ~50% de la RAM DISPONIBLE (pas totale) à la VM, borné entre 1024 et 4096 Mo,
+# arrondi au multiple de 256 inférieur. Le but : ne jamais affamer le reste du système
+# hôte (bureau, osh server, tunnel) pendant que la VM tourne — c'est exactement ce qui
+# a fait planter GNOME Shell dans la VM la première fois (RAM hôte insuffisante).
+if [[ -z "$RAM" ]]; then
+  avail_mb=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)
+  if [[ "$avail_mb" -gt 0 ]]; then
+    RAM=$(( avail_mb / 2 / 256 * 256 ))
+    [[ "$RAM" -lt 1024 ]] && RAM=1024
+    [[ "$RAM" -gt 4096 ]] && RAM=4096
+  else
+    RAM=2048  # /proc/meminfo illisible (rare) : valeur prudente par défaut
+  fi
+fi
 
 QEMU_PIDS=()
 cleanup() {

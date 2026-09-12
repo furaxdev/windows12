@@ -1,0 +1,25 @@
+# Profil "lite" — empreinte de build minimale, pensé pour un PC hôte à ressources
+# limitées (ex. 4 Go de RAM ou moins).
+#
+# ⚠️ Précision honnête sur ce que "lite" change réellement : le profil de build
+# n'a AUCUN effet sur la consommation RAM/disque de Windows une fois installé (c'est
+# la même ISO Windows 11 sous-jacente) — la différence porte uniquement sur ce que le
+# BUILDER fait pendant la fabrication de l'ISO :
+#   - installer_background: false  -> évite de monter boot.wim en plus d'install.wim
+#     (un montage FUSE en moins = moins d'E/S disque et moins de RAM utilisée pendant
+#     le build, mesurable mais modeste : quelques centaines de Mo, pas des Go)
+#   - Toutes les autres features restent identiques au profil minimal.
+# Pour réduire la consommation RAM/disque de Windows UNE FOIS installé (le vrai levier),
+# voir plutôt l'idée #6 du backlog dans docs/FEATURES.md (édition Core/Home via
+# --wim-index) et les idées #2/#7/#8 (désactivation bloatware/indexation/prefetch,
+# encore PLANNED, pas encore implémentées).
+
+name: lite
+
+features:
+  trivial_marker: true
+  wallpaper: true
+  installer_background: false
+  branding: true
+  theme: true
+  taskbar_floating_pill_experimental: false

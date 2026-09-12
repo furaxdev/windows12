@@ -135,4 +135,176 @@ Voir `docs/DESIGN_SYSTEM.md` pour le détail complet. Résumé de faisabilité :
 1. **Facile, natif, haute valeur perçue** (Phase 2-3) : thème par défaut, wallpapers, accent color, alignement barre des tâches, coins/ombres/transparence (déjà actifs), icônes custom, sons.
 2. **Moyenne difficulté, fort impact visuel** (Phase 4-5) : re-thème de la barre des tâches (patch shell tiers à évaluer sérieusement — c'est l'élément qui rapproche le plus visuellement du concept), diaporama de verrouillage, overlay de transition de thème.
 3. **Difficile, nécessite des apps tierces dédiées** (Phase 5+) : Menu Démarrer personnalisé, widget board maison, Explorateur "Tags".
-4. **`CONCEPT ONLY`, ne pas tenter** : ré-habillage du Setup/OOBE natif, LogonUI, LockApp, StartMenuExperienceHost en profondeur, position des toasts, build number falsifié.
+4. **`CONCEPT ONLY`, ne pas tenter** : LogonUI, LockApp, StartMenuExperienceHost en profondeur, position des toasts, build number falsifié. *(Mise à jour 12/09/2026 : le fond d'écran de l'assistant Setup/boot USB, lui, s'est révélé faisable et est maintenant `IMPLEMENTED` — voir `builder/modules/44-installer-background.sh` ci-dessous. Ne pas généraliser trop vite le "CONCEPT ONLY" avant d'avoir vraiment inspecté le WIM concerné.)*
+
+## 💿 Installateur Windows Setup (boot USB)
+
+| Fonctionnalité | État | Faisabilité | Implémentation envisagée |
+|---|---|---|---|
+| Fond d'écran de l'assistant Setup (écran bleu au boot USB) | `IMPLEMENTED` | Facile (une fois localisé) | `builder/modules/44-installer-background.sh` : monte `boot.wim` (index 2 "Microsoft Windows Setup", séparé d'`install.wim`), remplace `sources/background.bmp` ET `Windows/System32/setup.bmp` — malgré l'extension `.bmp` ce sont en réalité des PNG RGBA (confirmé via `file`), 1024×768 sur l'ISO 25H2 testée. Build réel exécuté avec succès (06/09/2026), fichiers confirmés remplacés après commit/démontage. **Rendu visuel réel au boot non encore vérifié en VM** (`TESTED` réservé à ça). |
+| Mise en page / style des boutons et texte de l'assistant | `CONCEPT ONLY` | Très difficile | Compilé en ressources PE dans `SetupPlatform.exe`/`SetupHost.exe` — pas de fichier séparé équivalent au background, patch de ressources PE natif Windows non tenté (nécessiterait Resource Hacker ou équivalent, pas d'outil Linux fiable identifié) |
+| Animation de progression (points qui tournent) pendant la copie | `CONCEPT ONLY` | Très difficile | Ressource compilée, idem ci-dessus |
+| Pré-remplissage langue/région/clavier | `IMPLEMENTABLE` | Facile | `autounattend.xml` à la racine de l'ISO — mécanisme Microsoft standard et documenté, non exploité pour l'instant |
+| Saut d'écrans (licence, choix édition) via réponses automatiques | `IMPLEMENTABLE` | Facile | `autounattend.xml`, idem |
+| Logo/watermark additionnel sur le fond Setup (au-dessus du dégradé) | `PLANNED` | Facile | Variante de `prepare_installer_background.py` avec `overlay_logo()` (déjà écrit pour le wallpaper bureau, réutilisable) |
+
+---
+
+## 💡 Backlog d'idées (100 pistes, non triées par priorité — brainstorm brut)
+
+Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, au-delà de ce qui est directement inspiré de la vidéo concept. **Aucune de ces lignes n'est implémentée** sauf mention contraire — c'est un backlog de brainstorm, pas un plan engagé. Chaque catégorie suit la même règle d'honnêteté que le reste du document.
+
+### ⚡ Performance & ressources système
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 1 | Profil de build "léger" (moins de composants optionnels, WIM plus petit) | `PLANNED` | Voir `builder/profiles/lite.yaml` — juste ajouté, voir plus bas |
+| 2 | Désactivation par défaut des apps préinstallées inutiles (bloatware Xbox/Office promo/etc.) | `PLANNED` | Faisable via suppression de packages provisionnés dans le WIM (`dism /Remove-ProvisionedAppxPackage` côté Windows, ou édition directe du WIM côté Linux) |
+| 3 | Mode "batterie longue durée" pré-configuré (plan d'alimentation custom) | `PLANNED` | Registre `powercfg`, faisable offline |
+| 4 | Détection auto de la RAM dispo côté VM de test et ajustement auto (déjà partiellement fait dans `launch-viewer.sh`) | `PARTIAL` | À généraliser (voir section resources ci-dessous) |
+| 5 | Nettoyage auto des anciens builds/ISOs dans `build/_out` (éviter accumulation disque) | `PLANNED` | Flag `--clean-old-outputs` sur `build.sh` |
+| 6 | Édition WIM "Core"/"Home" par défaut plutôt que Pro (empreinte disque installée plus faible) | `IMPLEMENTABLE` | Déjà possible via `--wim-index`, pas encore le défaut documenté clairement |
+| 7 | Désactivation de la recherche indexée par défaut (moins de CPU/disque en fond) | `PLANNED` | Registre `WSearch` service start type |
+| 8 | Superfetch/Prefetch désactivé pour SSD | `PLANNED` | Registre `SysMain` |
+| 9 | Mode "faible RAM" désactivant les effets de transparence/animations automatiquement si <4 Go détectés | `PLANNED` | Nécessiterait un script post-install (PowerShell), pas encore écrit |
+| 10 | Compression WIM plus agressive (LZMS) pour réduire la taille de l'ISO finale | `PLANNED` | `wimlib-imagex` supporte LZMS, pas encore testé dans le pipeline |
+
+### 🔒 Sécurité & confidentialité
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 11 | Désactivation télémétrie par défaut (niveau "Basique" au lieu de "Complet") | `PLANNED` | Registre `AllowTelemetry`, standard et documenté |
+| 12 | Pare-feu avec profil "strict" par défaut | `PLANNED` | `netsh advfirewall` offline via script post-install |
+| 13 | Compte local par défaut à l'OOBE (pas de compte Microsoft forcé) | `IMPLEMENTABLE` | `autounattend.xml`, mécanisme bien connu (`BypassNRO`) |
+| 14 | Désactivation Cortana/Copilot au premier démarrage | `PLANNED` | Registre + `autounattend.xml` |
+| 15 | Windows Defender pré-configuré en mode "silencieux" (moins de popups) | `PLANNED` | Registre notifications Defender |
+| 16 | Chiffrement BitLocker proposé (pas forcé) dès l'installation | `CONCEPT ONLY` | Dépend du matériel (TPM), pas pilotable de façon fiable depuis le builder offline |
+| 17 | Blocage des apps "suggérées" dans le Menu Démarrer (pub) | `IMPLEMENTABLE` | Registre `HKCU\...\ContentDeliveryManager` |
+| 18 | Nettoyeur de permissions apps (audit visuel des accès caméra/micro) | `PLANNED` | App tierce (`apps/`) |
+| 19 | Mode "invité sécurisé" (session éphémère qui efface tout à la fermeture) | `CONCEPT ONLY` | Windows 11 a retiré le compte Invité natif ; recréation via script complexe et fragile |
+| 20 | VPN/Proxy système pré-configurable via profil de build | `PLANNED` | Registre réseau, offline |
+
+### 🎮 Jeux & performance graphique
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 21 | Mode Jeu activé par défaut | `IMPLEMENTABLE` | Registre `AllowAutoGameMode` |
+| 22 | Xbox Game Bar désactivée par défaut (préférence perf) | `IMPLEMENTABLE` | Registre `AppCaptureEnabled` |
+| 23 | Overlay FPS natif activé | `IMPLEMENTABLE` | Registre Game Bar |
+| 24 | Profil GPU "performance" par défaut (plutôt qu'équilibré) | `PLANNED` | Dépend du fabricant GPU (Intel/AMD/NVIDIA), pas uniforme |
+| 25 | Auto-HDR activé par défaut | `IMPLEMENTABLE` | Registre, natif Win11 |
+| 26 | VRR (Variable Refresh Rate) activé par défaut si supporté | `IMPLEMENTABLE` | Registre, natif Win11 |
+| 27 | Optimisation plein écran désactivée par défaut (moins de latence input) | `IMPLEMENTABLE` | Registre par app, complexe à généraliser |
+| 28 | Raccourci "Mode Jeu Furax" (bascule rapide perf) dans la barre des tâches | `PLANNED` | Nécessiterait une mini-app tierce |
+| 29 | Détection auto GPU et suggestion de pilotes à jour au premier boot | `CONCEPT ONLY` | Hors du périmètre offline du builder |
+| 30 | Wallpaper dynamique réactif au FPS (concept gadget) | `CONCEPT ONLY` | Idée gadget, pas de mécanisme Windows natif pour ça |
+
+### 🗂️ Productivité & multitâche
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 31 | Bureaux virtuels nommés/thémés par défaut (Travail/Perso/Jeux) | `IMPLEMENTABLE` | Natif Win11, config possible via script post-install |
+| 32 | Raccourcis clavier custom pré-configurés (façon "Furax shortcuts") | `PLANNED` | Registre `HKCU\...\Keyboard Layout` |
+| 33 | PowerToys pré-installé et pré-configuré (FancyZones, etc.) | `PLANNED` | App tierce Microsoft officielle, installable offline via provisioning |
+| 34 | Presse-papiers multi-éléments activé par défaut | `IMPLEMENTABLE` | Registre `EnableClipboardHistory`, natif Win11 |
+| 35 | Snap Layouts avec préréglages custom (grilles Furax) | `CONCEPT ONLY` | Windows ne permet pas de définir des grilles Snap custom nativement |
+| 36 | Barre des tâches multi-écrans avec réglages indépendants | `IMPLEMENTABLE` | Natif Win11, réglage existant |
+| 37 | Mode "focus"/Ne pas déranger programmable par horaire | `IMPLEMENTABLE` | Natif Win11 (Focus Assist), config par défaut possible |
+| 38 | Widget "notes rapides" épinglable au bureau | `PLANNED` | App tierce légère |
+| 39 | Historique du presse-papiers synchronisé (opt-in) | `IMPLEMENTABLE` | Natif Win11, nécessite compte Microsoft (à documenter comme tel) |
+| 40 | Terminal Windows pré-configuré avec thème Furax (couleurs, police) | `PLANNED` | Fichier `settings.json` de Windows Terminal, déposable dans le profil par défaut |
+
+### ♿ Accessibilité
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 41 | Contrastes élevés en option pré-visible dans le sélecteur de thème | `IMPLEMENTABLE` | Natif Win11 |
+| 42 | Narrateur avec voix française par défaut si langue FR détectée | `IMPLEMENTABLE` | Natif, dépend de la langue d'installation choisie |
+| 43 | Curseur agrandi par défaut en option facile d'accès à l'OOBE | `IMPLEMENTABLE` | Natif Win11, réglage OOBE |
+| 44 | Sous-titres système activés par défaut sur médias | `IMPLEMENTABLE` | Natif Win11 |
+| 45 | Mode "lecture facile" (police plus grande, espacement) en un clic | `PLANNED` | Combo de réglages existants, pas de bouton unique natif |
+| 46 | Reconnaissance vocale système pré-activée | `IMPLEMENTABLE` | Natif Win11, opt-in |
+| 47 | Filtres de couleur (daltonisme) accessibles depuis Quick Settings | `PARTIAL` | Natif dans Paramètres, pas dans Quick Settings par défaut |
+| 48 | Zoom d'écran avec raccourci Furax dédié | `PLANNED` | Registre raccourcis |
+| 49 | Retour haptique clavier virtuel renforcé | `CONCEPT ONLY` | Dépend du matériel, pas pilotable de façon fiable |
+| 50 | Thème audio (sons système) pensé accessibilité (sons distincts) | `PLANNED` | Pack de sons `.wav` custom, mécanisme natif de thème sonore |
+
+### 🌐 Réseau & connectivité
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 51 | Profil réseau "Privé" par défaut sur les nouveaux réseaux (au lieu de demander) | `IMPLEMENTABLE` | Registre, mais impact sécurité à documenter clairement si activé |
+| 52 | DNS pré-configuré (ex. Cloudflare/Quad9) en option au build | `PLANNED` | Registre interface réseau |
+| 53 | Partage de connexion (hotspot) accessible en un clic depuis Quick Settings | `IMPLEMENTABLE` | Déjà natif Win11 |
+| 54 | Mode avion programmable par horaire | `CONCEPT ONLY` | Pas de mécanisme natif de programmation horaire pour ça |
+| 55 | Détection réseau lent et bascule auto vers mode "économie de données" | `IMPLEMENTABLE` | Natif Win11 (partiellement), réglage existant |
+| 56 | Bluetooth désactivé par défaut (économie batterie) avec réactivation rapide | `IMPLEMENTABLE` | Registre |
+| 57 | Partage de fichiers local simplifié (façon AirDrop) entre PC Furax | `CONCEPT ONLY` | Nécessiterait une vraie app propriétaire, hors périmètre |
+| 58 | VPN intégré au profil de build (config WireGuard pré-remplie, opt-in) | `PLANNED` | Faisable offline si l'utilisateur fournit sa propre config |
+| 59 | Indicateur de qualité Wi-Fi détaillé (dBm) dans la barre des tâches | `CONCEPT ONLY` | Nécessiterait un patch shell, comme la barre pilule |
+| 60 | Historique des connexions réseau consultable simplement | `IMPLEMENTABLE` | Natif via Event Viewer, pas d'UI dédiée simple nativement |
+
+### 🤖 IA & assistant
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 61 | Copilot désactivé par défaut (opt-in explicite) | `IMPLEMENTABLE` | Registre `TurnOffWindowsCopilot` |
+| 62 | Assistant vocal local léger (alternative offline à Copilot) | `CONCEPT ONLY` | Développement d'app IA complet, hors périmètre de ce projet de customisation ISO |
+| 63 | Résumé auto des notifications manquées (façon "digest") | `CONCEPT ONLY` | Nécessiterait une app tierce avec accès notifications |
+| 64 | Recherche Windows augmentée par IA locale (recherche sémantique fichiers) | `CONCEPT ONLY` | Hors périmètre, projet de customisation pas de moteur IA |
+| 65 | Raccourci "Furax Assistant" configurable (ouvre l'app IA de son choix) | `PLANNED` | Simple raccourci clavier/menu, faisable |
+
+### 🎵 Multimédia
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 66 | Lecteur multimédia natif re-thémé (accent Furax) | `PARTIAL` | Le lecteur Windows Media Player natif hérite déjà de l'accent système |
+| 67 | Codecs additionnels pré-installés (via provisioning) | `PLANNED` | Provisioning package offline, faisable |
+| 68 | Egaliseur audio système accessible depuis Quick Settings | `CONCEPT ONLY` | Pas de mécanisme natif, dépend du pilote audio |
+| 69 | Mode "Cinéma" (assombrit l'écran, désactive notifications) en un raccourci | `PLANNED` | Combo Focus Assist + luminosité, scriptable |
+| 70 | Wallpaper Spotlight (rotation quotidienne d'images officielles Bing/Windows) activé par défaut | `IMPLEMENTABLE` | Natif Win11, juste activer le réglage par défaut |
+| 71 | Thème sonore complet "Furax" (démarrage, notifications, erreurs) | `PLANNED` | Pack `.wav` + fichier `.theme`, mécanisme natif |
+| 72 | Capture d'écran améliorée (annotations rapides intégrées) | `IMPLEMENTABLE` | Déjà natif Win11 (Outil Capture d'écran) |
+| 73 | Enregistrement d'écran système avec watermark Furax optionnel | `CONCEPT ONLY` | Nécessiterait modification de l'app Xbox Game Bar, non supporté |
+| 74 | Visionneuse de photos par défaut re-thémée | `IMPLEMENTABLE` | Registre associations de fichiers |
+| 75 | Radio/webradio intégrée en widget | `PLANNED` | App tierce légère |
+
+### 💽 Installation, maintenance & mises à jour
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 76 | `autounattend.xml` complet (langue, edition, partitionnement pré-rempli) | `PLANNED` | Mécanisme Microsoft standard, gros gain d'ergonomie pour l'installeur |
+| 77 | Écran de bienvenue post-install "Bienvenue sur Furax Windows 12" | `PLANNED` | Script `RunOnce` au premier login, faisable |
+| 78 | Mises à jour Windows différées de X jours par défaut (stabilité) | `IMPLEMENTABLE` | Registre `DeferFeatureUpdates` |
+| 79 | Point de restauration auto créé juste après l'installation | `PLANNED` | Script post-install PowerShell |
+| 80 | Vérification d'intégrité (SFC/DISM) programmée en tâche planifiée mensuelle | `PLANNED` | Tâche planifiée offline, faisable |
+| 81 | Sauvegarde auto vers un dossier local dès la configuration initiale | `PLANNED` | Configuration "Historique des fichiers" via script |
+| 82 | Rollback en un clic depuis un raccourci bureau (déjà en partie fait) | `IMPLEMENTED` | Voir `scripts/rollback/Rollback-FuraxWindows12.ps1`, juste ajouter un raccourci bureau au dépôt |
+| 83 | Rapport de santé système (espace disque, RAM, température) au démarrage | `CONCEPT ONLY` | Nécessiterait une app de monitoring dédiée |
+| 84 | Nettoyage auto des fichiers temporaires programmé | `IMPLEMENTABLE` | Tâche planifiée native `cleanmgr` |
+| 85 | Mode "installation silencieuse" complet sans interaction (entreprise) | `PLANNED` | `autounattend.xml` poussé à fond, cas d'usage différent du profil grand public |
+
+### 🎨 Personnalisation avancée
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 86 | Galerie de wallpapers Furax (plusieurs variantes, pas qu'une seule) | `PLANNED` | Juste ajouter des assets dans `assets/wallpapers/` + logique de sélection au build |
+| 87 | Curseurs de souris custom (pack assorti au thème) | `PLANNED` | Mécanisme natif `.inf` de pack de curseurs, faisable offline |
+| 88 | Icônes système custom (dossiers, corbeille, ce PC) | `PLANNED` | Registre `Shell Icons`, faisable |
+| 89 | Police système alternative (si lisibilité confirmée) | `PLANNED` | Remplacement de police système = risque de casse UI, à tester prudemment |
+| 90 | Sons de démarrage custom | `PLANNED` | Mécanisme natif `.wav` de son de démarrage |
+| 91 | Écran de veille custom (vagues animées Furax) | `PLANNED` | `.scr` natif Windows, faisable |
+| 92 | Thème clair alternatif (pas que sombre) avec la même identité visuelle | `PLANNED` | Variante du travail déjà fait sur le thème sombre |
+| 93 | Fonds d'écran adaptatifs (différents par heure de la journée) | `IMPLEMENTABLE` | Natif Win11 ("Windows Spotlight" ou diaporama programmé) |
+| 94 | Pack de thème complet exportable/partageable (`.deskthemepack`) | `PLANNED` | Format natif Windows, packaging à faire |
+
+### 🧪 Outillage projet (pas des features Windows, mais utiles au dev)
+
+| # | Idée | État | Note |
+|---|---|---|---|
+| 95 | Profil de build `lite.yaml` optimisé ressources | `IMPLEMENTED` | Ajouté à l'instant, voir `builder/profiles/lite.yaml` |
+| 96 | Détection auto de RAM dispo dans `launch-viewer.sh`/`.ps1` (ajuste `--ram` automatiquement) | `PLANNED` | Amélioration des scripts existants, pas encore faite |
+| 97 | `osh` : mode "batch" pour envoyer plusieurs commandes en une fois (moins de latence Supabase) | `PLANNED` | Amélioration de `tools/openconnect/osh` |
+| 98 | Tests automatisés du builder en CI (GitHub Actions) sur une ISO factice | `PLANNED` | Nécessiterait une ISO de test légère, pas la vraie Windows (droits de distribution) |
+| 99 | Dashboard web de suivi des builds (historique, tailles, features actives) | `PLANNED` | Petit artifact/app séparée, hors périmètre immédiat |
+| 100 | Documentation vidéo (screencast) du build de bout en bout | `PLANNED` | Nécessite un boot VM confirmé d'abord (prérequis non encore validé) |
