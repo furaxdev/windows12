@@ -20,6 +20,10 @@ features:
   branding: true
   # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.
   theme: true
+  # Télémétrie=Basique, Copilot désactivé, updates différés (HKLM) + suggestions Menu
+  # Démarrer désactivées, historique presse-papiers et Mode Jeu activés (profil Default).
+  # Voir builder/modules/47-privacy-performance.sh.
+  privacy_performance: true
   # EXPERIMENTAL / UNTESTED — barre des tâches "pilule flottante" via Windhawk.
   # Désactivé par défaut : dépose uniquement de la documentation, n'installe/n'exécute
   # RIEN automatiquement. Voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md avant de

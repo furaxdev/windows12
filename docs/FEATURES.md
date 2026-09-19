@@ -173,13 +173,13 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 
 | # | Idée | État | Note |
 |---|---|---|---|
-| 11 | Désactivation télémétrie par défaut (niveau "Basique" au lieu de "Complet") | `PLANNED` | Registre `AllowTelemetry`, standard et documenté |
+| 11 | Désactivation télémétrie par défaut (niveau "Basique" au lieu de "Complet") | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `HKLM\Policies\Microsoft\Windows\DataCollection\AllowTelemetry`=1. Écrit + relu avec succès dans l'ISO générée (19/09/2026). Rendu réel non encore vérifié en VM. |
 | 12 | Pare-feu avec profil "strict" par défaut | `PLANNED` | `netsh advfirewall` offline via script post-install |
 | 13 | Compte local par défaut à l'OOBE (pas de compte Microsoft forcé) | `IMPLEMENTABLE` | `autounattend.xml`, mécanisme bien connu (`BypassNRO`) |
 | 14 | Désactivation Cortana/Copilot au premier démarrage | `PLANNED` | Registre + `autounattend.xml` |
 | 15 | Windows Defender pré-configuré en mode "silencieux" (moins de popups) | `PLANNED` | Registre notifications Defender |
 | 16 | Chiffrement BitLocker proposé (pas forcé) dès l'installation | `CONCEPT ONLY` | Dépend du matériel (TPM), pas pilotable de façon fiable depuis le builder offline |
-| 17 | Blocage des apps "suggérées" dans le Menu Démarrer (pub) | `IMPLEMENTABLE` | Registre `HKCU\...\ContentDeliveryManager` |
+| 17 | Blocage des apps "suggérées" dans le Menu Démarrer (pub) | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `ContentDeliveryManager\SubscribedContent-338388Enabled`=0 (profil Default). Écrit + relu avec succès. |
 | 18 | Nettoyeur de permissions apps (audit visuel des accès caméra/micro) | `PLANNED` | App tierce (`apps/`) |
 | 19 | Mode "invité sécurisé" (session éphémère qui efface tout à la fermeture) | `CONCEPT ONLY` | Windows 11 a retiré le compte Invité natif ; recréation via script complexe et fragile |
 | 20 | VPN/Proxy système pré-configurable via profil de build | `PLANNED` | Registre réseau, offline |
@@ -188,8 +188,8 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 
 | # | Idée | État | Note |
 |---|---|---|---|
-| 21 | Mode Jeu activé par défaut | `IMPLEMENTABLE` | Registre `AllowAutoGameMode` |
-| 22 | Xbox Game Bar désactivée par défaut (préférence perf) | `IMPLEMENTABLE` | Registre `AppCaptureEnabled` |
+| 21 | Mode Jeu activé par défaut | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `GameBar\AllowAutoGameMode`=1 (profil Default). Écrit + relu avec succès. |
+| 22 | Enregistrement en arrière-plan Game Bar désactivé (préférence perf) | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `GameConfigStore\GameDVR_Enabled`=0 (profil Default) — clé réellement implémentée, différente d'`AppCaptureEnabled` initialement envisagé (même effet recherché : moins d'enregistrement en fond). Écrit + relu avec succès. |
 | 23 | Overlay FPS natif activé | `IMPLEMENTABLE` | Registre Game Bar |
 | 24 | Profil GPU "performance" par défaut (plutôt qu'équilibré) | `PLANNED` | Dépend du fabricant GPU (Intel/AMD/NVIDIA), pas uniforme |
 | 25 | Auto-HDR activé par défaut | `IMPLEMENTABLE` | Registre, natif Win11 |
@@ -206,7 +206,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 | 31 | Bureaux virtuels nommés/thémés par défaut (Travail/Perso/Jeux) | `IMPLEMENTABLE` | Natif Win11, config possible via script post-install |
 | 32 | Raccourcis clavier custom pré-configurés (façon "Furax shortcuts") | `PLANNED` | Registre `HKCU\...\Keyboard Layout` |
 | 33 | PowerToys pré-installé et pré-configuré (FancyZones, etc.) | `PLANNED` | App tierce Microsoft officielle, installable offline via provisioning |
-| 34 | Presse-papiers multi-éléments activé par défaut | `IMPLEMENTABLE` | Registre `EnableClipboardHistory`, natif Win11 |
+| 34 | Presse-papiers multi-éléments activé par défaut | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `Clipboard\EnableClipboardHistory`=1 (profil Default). Écrit + relu avec succès. |
 | 35 | Snap Layouts avec préréglages custom (grilles Furax) | `CONCEPT ONLY` | Windows ne permet pas de définir des grilles Snap custom nativement |
 | 36 | Barre des tâches multi-écrans avec réglages indépendants | `IMPLEMENTABLE` | Natif Win11, réglage existant |
 | 37 | Mode "focus"/Ne pas déranger programmable par horaire | `IMPLEMENTABLE` | Natif Win11 (Focus Assist), config par défaut possible |
@@ -248,7 +248,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 
 | # | Idée | État | Note |
 |---|---|---|---|
-| 61 | Copilot désactivé par défaut (opt-in explicite) | `IMPLEMENTABLE` | Registre `TurnOffWindowsCopilot` |
+| 61 | Copilot désactivé par défaut (opt-in explicite) | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `HKLM\Policies\Microsoft\Windows\WindowsCopilot\TurnOffWindowsCopilot`=1. Écrit + relu avec succès. |
 | 62 | Assistant vocal local léger (alternative offline à Copilot) | `CONCEPT ONLY` | Développement d'app IA complet, hors périmètre de ce projet de customisation ISO |
 | 63 | Résumé auto des notifications manquées (façon "digest") | `CONCEPT ONLY` | Nécessiterait une app tierce avec accès notifications |
 | 64 | Recherche Windows augmentée par IA locale (recherche sémantique fichiers) | `CONCEPT ONLY` | Hors périmètre, projet de customisation pas de moteur IA |
@@ -275,7 +275,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 |---|---|---|---|
 | 76 | `autounattend.xml` complet (langue, edition, partitionnement pré-rempli) | `PLANNED` | Mécanisme Microsoft standard, gros gain d'ergonomie pour l'installeur |
 | 77 | Écran de bienvenue post-install "Bienvenue sur Furax Windows 12" | `PLANNED` | Script `RunOnce` au premier login, faisable |
-| 78 | Mises à jour Windows différées de X jours par défaut (stabilité) | `IMPLEMENTABLE` | Registre `DeferFeatureUpdates` |
+| 78 | Mises à jour Windows différées de X jours par défaut (stabilité) | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `HKLM\Policies\Microsoft\Windows\WindowsUpdate\DeferFeatureUpdatesPeriodInDays`=7. Écrit + relu avec succès. |
 | 79 | Point de restauration auto créé juste après l'installation | `PLANNED` | Script post-install PowerShell |
 | 80 | Vérification d'intégrité (SFC/DISM) programmée en tâche planifiée mensuelle | `PLANNED` | Tâche planifiée offline, faisable |
 | 81 | Sauvegarde auto vers un dossier local dès la configuration initiale | `PLANNED` | Configuration "Historique des fichiers" via script |

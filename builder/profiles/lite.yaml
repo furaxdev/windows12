@@ -9,10 +9,13 @@
 #     (un montage FUSE en moins = moins d'E/S disque et moins de RAM utilisée pendant
 #     le build, mesurable mais modeste : quelques centaines de Mo, pas des Go)
 #   - Toutes les autres features restent identiques au profil minimal.
-# Pour réduire la consommation RAM/disque de Windows UNE FOIS installé (le vrai levier),
-# voir plutôt l'idée #6 du backlog dans docs/FEATURES.md (édition Core/Home via
-# --wim-index) et les idées #2/#7/#8 (désactivation bloatware/indexation/prefetch,
-# encore PLANNED, pas encore implémentées).
+# privacy_performance (voir builder/modules/47-privacy-performance.sh) est LUI un vrai
+# levier, même petit, sur Windows une fois installé : Copilot désactivé = un processus de
+# moins à l'usage, mises à jour de fonctionnalités différées = moins d'E/S disque en
+# arrière-plan les premiers jours. Modeste, mais dans le bon sens, donc activé ici aussi.
+# Pour un vrai gain RAM/disque installé, voir plutôt l'idée #6 du backlog dans
+# docs/FEATURES.md (édition Core/Home via --wim-index) et les idées #2/#7/#8
+# (désactivation bloatware/indexation/prefetch, encore PLANNED, pas encore implémentées).
 
 name: lite
 
@@ -22,4 +25,5 @@ features:
   installer_background: false
   branding: true
   theme: true
+  privacy_performance: true
   taskbar_floating_pill_experimental: false

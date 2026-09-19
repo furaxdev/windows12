@@ -122,6 +122,11 @@ if grep -q '^\s*theme:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_THEME=0
 fi
+if grep -q '^\s*privacy_performance:\s*true' "$PROFILE_FILE"; then
+  FEATURE_PRIVACY_PERFORMANCE=1
+else
+  FEATURE_PRIVACY_PERFORMANCE=0
+fi
 if grep -q '^\s*taskbar_floating_pill_experimental:\s*true' "$PROFILE_FILE"; then
   FEATURE_TASKBAR_EXPERIMENTAL=1
 else
@@ -132,6 +137,7 @@ log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BACKGROUND"
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
+log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFORMANCE"
 log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — documentation uniquement, jamais d'exécution auto)"
 
 # --- Pipeline ---
@@ -174,6 +180,13 @@ if [[ "$FEATURE_THEME" -eq 1 ]]; then
 else
   log_step "46-theme : SKIPPED (désactivé par le profil $PROFILE)"
   report_step "46-theme" "SKIPPED" "désactivé par le profil"
+fi
+
+if [[ "$FEATURE_PRIVACY_PERFORMANCE" -eq 1 ]]; then
+  module_47_privacy_performance
+else
+  log_step "47-privacy-performance : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "47-privacy-performance" "SKIPPED" "désactivé par le profil"
 fi
 
 if [[ "$FEATURE_TASKBAR_EXPERIMENTAL" -eq 1 ]]; then

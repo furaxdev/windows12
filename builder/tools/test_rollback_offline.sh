@@ -50,6 +50,8 @@ echo ""
 echo "=== 2. Confirme l'état STOCK (avant toute modification) ==="
 check "RegisteredOwner absent ou vide par défaut (stock)" $([[ -z "$(hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOwner 2>/dev/null)" ]]; echo $?)
 check "OEMInformation absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\OEMInformation' Manufacturer >/dev/null 2>&1; echo $?)
+check "AllowTelemetry absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\DataCollection' AllowTelemetry >/dev/null 2>&1; echo $?)
+check "TurnOffWindowsCopilot absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot >/dev/null 2>&1; echo $?)
 
 echo ""
 echo "=== 3. Applique le FORWARD (mêmes opérations que 42-branding.sh / 46-theme.sh) ==="
@@ -59,12 +61,26 @@ $SET "$SOFTWARE" 'Microsoft\Windows\CurrentVersion\OEMInformation' Manufacturer 
 $SET "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' AppsUseLightTheme dword 0 --create-keys >/dev/null
 $SET "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' ColorPrevalence dword 1 --create-keys >/dev/null
 $SET "$NTUSER" 'Control Panel\Desktop' AutoColorization dword 1 --create-keys >/dev/null
+$SET "$SOFTWARE" 'Policies\Microsoft\Windows\DataCollection' AllowTelemetry dword 1 --create-keys >/dev/null
+$SET "$SOFTWARE" 'Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot dword 1 --create-keys >/dev/null
+$SET "$SOFTWARE" 'Policies\Microsoft\Windows\WindowsUpdate' DeferFeatureUpdatesPeriodInDays dword 7 --create-keys >/dev/null
+$SET "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' SubscribedContent-338388Enabled dword 0 --create-keys >/dev/null
+$SET "$NTUSER" 'Software\Microsoft\Clipboard' EnableClipboardHistory dword 1 --create-keys >/dev/null
+$SET "$NTUSER" 'Software\Microsoft\GameBar' AllowAutoGameMode dword 1 --create-keys >/dev/null
+$SET "$NTUSER" 'System\GameConfigStore' GameDVR_Enabled dword 0 --create-keys >/dev/null
 
 echo "Vérification post-forward :"
 check "RegisteredOrganization = 'By FuraxDev'" $([[ "$(hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOrganization)" == "By FuraxDev" ]]; echo $?)
 check "OEMInformation\\Manufacturer = 'FuraxDev'" $([[ "$(hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\OEMInformation' Manufacturer)" == "FuraxDev" ]]; echo $?)
 check "AppsUseLightTheme = 0" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' AppsUseLightTheme)" == "0" ]]; echo $?)
 check "ColorPrevalence = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' ColorPrevalence)" == "1" ]]; echo $?)
+check "AllowTelemetry = 1" $([[ "$(hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\DataCollection' AllowTelemetry)" == "1" ]]; echo $?)
+check "TurnOffWindowsCopilot = 1" $([[ "$(hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot)" == "1" ]]; echo $?)
+check "DeferFeatureUpdatesPeriodInDays = 7" $([[ "$(hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsUpdate' DeferFeatureUpdatesPeriodInDays)" == "7" ]]; echo $?)
+check "SubscribedContent-338388Enabled = 0" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' SubscribedContent-338388Enabled)" == "0" ]]; echo $?)
+check "EnableClipboardHistory = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\Clipboard' EnableClipboardHistory)" == "1" ]]; echo $?)
+check "AllowAutoGameMode = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\GameBar' AllowAutoGameMode)" == "1" ]]; echo $?)
+check "GameDVR_Enabled = 0" $([[ "$(hivexget "$NTUSER" '\System\GameConfigStore' GameDVR_Enabled)" == "0" ]]; echo $?)
 
 echo ""
 echo "=== 4. Applique le ROLLBACK (inverse) ==="
@@ -74,6 +90,13 @@ $DEL_KEY "$SOFTWARE" 'Microsoft\Windows\CurrentVersion' OEMInformation >/dev/nul
 $DEL_VAL "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' AppsUseLightTheme >/dev/null
 $DEL_VAL "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' ColorPrevalence >/dev/null
 $DEL_VAL "$NTUSER" 'Control Panel\Desktop' AutoColorization >/dev/null
+$DEL_VAL "$SOFTWARE" 'Policies\Microsoft\Windows\DataCollection' AllowTelemetry >/dev/null
+$DEL_VAL "$SOFTWARE" 'Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot >/dev/null
+$DEL_VAL "$SOFTWARE" 'Policies\Microsoft\Windows\WindowsUpdate' DeferFeatureUpdatesPeriodInDays >/dev/null
+$DEL_VAL "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' SubscribedContent-338388Enabled >/dev/null
+$DEL_VAL "$NTUSER" 'Software\Microsoft\Clipboard' EnableClipboardHistory >/dev/null
+$DEL_VAL "$NTUSER" 'Software\Microsoft\GameBar' AllowAutoGameMode >/dev/null
+$DEL_VAL "$NTUSER" 'System\GameConfigStore' GameDVR_Enabled >/dev/null
 
 echo "Vérification post-rollback :"
 check "RegisteredOwner de nouveau absent" $(! hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOwner >/dev/null 2>&1; echo $?)
@@ -82,6 +105,13 @@ check "OEMInformation entièrement supprimé" $(! hivexget "$SOFTWARE" '\Microso
 check "AppsUseLightTheme de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' AppsUseLightTheme >/dev/null 2>&1; echo $?)
 check "ColorPrevalence de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' ColorPrevalence >/dev/null 2>&1; echo $?)
 check "AutoColorization de nouveau absent" $(! hivexget "$NTUSER" '\Control Panel\Desktop' AutoColorization >/dev/null 2>&1; echo $?)
+check "AllowTelemetry de nouveau absent" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\DataCollection' AllowTelemetry >/dev/null 2>&1; echo $?)
+check "TurnOffWindowsCopilot de nouveau absent" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot >/dev/null 2>&1; echo $?)
+check "DeferFeatureUpdatesPeriodInDays de nouveau absent" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsUpdate' DeferFeatureUpdatesPeriodInDays >/dev/null 2>&1; echo $?)
+check "SubscribedContent-338388Enabled de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' SubscribedContent-338388Enabled >/dev/null 2>&1; echo $?)
+check "EnableClipboardHistory de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\Clipboard' EnableClipboardHistory >/dev/null 2>&1; echo $?)
+check "AllowAutoGameMode de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\GameBar' AllowAutoGameMode >/dev/null 2>&1; echo $?)
+check "GameDVR_Enabled de nouveau absent" $(! hivexget "$NTUSER" '\System\GameConfigStore' GameDVR_Enabled >/dev/null 2>&1; echo $?)
 
 echo ""
 echo "=== Résultat : $PASS PASS / $FAIL FAIL ==="

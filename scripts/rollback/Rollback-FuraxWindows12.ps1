@@ -10,6 +10,8 @@
     - fond d'écran par défaut (restauré depuis la sauvegarde faite au build)
     - clés de thème (sombre/transparence/accent) ajoutées sous ton profil
     - branding "By FuraxDev" (RegisteredOwner/RegisteredOrganization, OEMInformation)
+    - réglages confidentialité/performance (télémétrie, Copilot, updates différés,
+      suggestions Menu Démarrer, historique presse-papiers, Mode Jeu, Game Bar)
 
     Il NE désinstalle PAS Windows, NE touche PAS aux fichiers système autres que ceux
     listés ci-dessus, et est conçu pour être relancé plusieurs fois sans risque
@@ -94,6 +96,55 @@ if (Test-Path $oemKey) {
     Write-Ok "Clé OEMInformation supprimée entièrement (elle n'existait pas avant nos modifications)."
 } else {
     Write-Skip "Clé OEMInformation absente."
+}
+
+# --- 4. Confidentialité / performance (télémétrie, Copilot, updates, suggestions, etc.) ---
+Write-Step "Confidentialité / performance"
+
+# HKLM : on ne supprime QUE les valeurs qu'on a écrites, pas les clés entières — au
+# contraire d'OEMInformation ci-dessus, ces clés de policy (Policies\Microsoft\Windows\...)
+# peuvent légitimement contenir d'autres réglages GPO déjà présents avant notre passage.
+$dataCollectionKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+if (Test-Path $dataCollectionKey) {
+    Remove-ItemProperty -Path $dataCollectionKey -Name "AllowTelemetry" -ErrorAction SilentlyContinue
+    Write-Ok "AllowTelemetry supprimé (télémétrie revient au comportement par défaut de l'édition)."
+}
+
+$copilotKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+if (Test-Path $copilotKey) {
+    Remove-ItemProperty -Path $copilotKey -Name "TurnOffWindowsCopilot" -ErrorAction SilentlyContinue
+    Write-Ok "TurnOffWindowsCopilot supprimé (Copilot redevient disponible selon la config Microsoft par défaut)."
+}
+
+$wuKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate"
+if (Test-Path $wuKey) {
+    Remove-ItemProperty -Path $wuKey -Name "DeferFeatureUpdatesPeriodInDays" -ErrorAction SilentlyContinue
+    Write-Ok "DeferFeatureUpdatesPeriodInDays supprimé (updates de fonctionnalités ne sont plus différés)."
+}
+
+# HKCU (profil courant) : suggestions Menu Démarrer, presse-papiers, Mode Jeu, Game Bar
+$cdmKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+if (Test-Path $cdmKey) {
+    Remove-ItemProperty -Path $cdmKey -Name "SubscribedContent-338388Enabled" -ErrorAction SilentlyContinue
+    Write-Ok "Suggestions d'apps dans le Menu Démarrer réinitialisées au comportement par défaut."
+}
+
+$clipboardKey = "HKCU:\Software\Microsoft\Clipboard"
+if (Test-Path $clipboardKey) {
+    Remove-ItemProperty -Path $clipboardKey -Name "EnableClipboardHistory" -ErrorAction SilentlyContinue
+    Write-Ok "EnableClipboardHistory supprimé (redevient désactivé par défaut)."
+}
+
+$gameBarKey = "HKCU:\Software\Microsoft\GameBar"
+if (Test-Path $gameBarKey) {
+    Remove-ItemProperty -Path $gameBarKey -Name "AllowAutoGameMode" -ErrorAction SilentlyContinue
+    Write-Ok "AllowAutoGameMode supprimé."
+}
+
+$gameConfigKey = "HKCU:\System\GameConfigStore"
+if (Test-Path $gameConfigKey) {
+    Remove-ItemProperty -Path $gameConfigKey -Name "GameDVR_Enabled" -ErrorAction SilentlyContinue
+    Write-Ok "GameDVR_Enabled supprimé (enregistrement Game Bar en arrière-plan revient au défaut)."
 }
 
 Write-Host ""

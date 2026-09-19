@@ -12,6 +12,7 @@ features:
   installer_background: true
   branding: true
   theme: true
+  privacy_performance: true
   # EXPERIMENTAL / UNTESTED — voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md.
   # Reste désactivé même dans le profil "full" : ce n'est pas un tweak natif vérifié,
   # c'est une doc pour une manip manuelle post-installation. Ne pas activer sans lire.
