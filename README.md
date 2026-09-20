@@ -6,6 +6,10 @@ Furax Windows 12 Beta est un projet expérimental qui vise à reproduire, de fa�
 
 Ce n'est **pas** un fork du noyau Windows, **pas** un contournement d'activation/licence, et **pas** un outil de piratage. C'est un pipeline de *customisation offline* (registre, policies, assets, applications tierces) appliqué à une ISO Windows 11 que tu fournis toi-même.
 
+## Branche `x86`
+
+Variante expérimentale basée sur **Windows 10 x86 (32-bit)** officiel, sur une branche séparée (`x86`) pour ne pas mélanger avec le pipeline principal Windows 11 x64. **Statut : `PLANNED`, bloquée en attente d'une ISO Windows 10 x86 officielle** (même règle que pour Windows 11 : l'utilisateur doit la fournir lui-même via microsoft.com, ce projet n'en télécharge/distribue aucune). Le pipeline de build (extraction, montage WIM, édition registre offline, reconstruction ISO) est en grande partie architecture-agnostique et devrait se réutiliser tel quel ; les différences attendues (à vérifier une fois l'ISO fournie, pas supposées à l'avance) : certaines clés de registre du module `47-privacy-performance.sh` n'existent pas sous Windows 10 (ex. `WindowsCopilot`, ajouté bien plus tard), et le boot BIOS/UEFI32 diffère du BIOS/UEFI64 utilisé pour Windows 11.
+
 ## Documents clés
 
 | Document | Contenu |
