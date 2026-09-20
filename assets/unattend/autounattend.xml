@@ -36,7 +36,7 @@
 
   <settings pass="windowsPE">
     <component name="Microsoft-Windows-International-Core-WinPE"
-                processorArchitecture="amd64"
+                processorArchitecture="x86"
                 publicKeyToken="31bf3856ad364e35"
                 language="neutral"
                 versionScope="nonSxS"
@@ -52,7 +52,7 @@
     </component>
 
     <component name="Microsoft-Windows-Setup"
-                processorArchitecture="amd64"
+                processorArchitecture="x86"
                 publicKeyToken="31bf3856ad364e35"
                 language="neutral"
                 versionScope="nonSxS"
@@ -77,7 +77,7 @@
 
   <settings pass="oobeSystem">
     <component name="Microsoft-Windows-Shell-Setup"
-                processorArchitecture="amd64"
+                processorArchitecture="x86"
                 publicKeyToken="31bf3856ad364e35"
                 language="neutral"
                 versionScope="nonSxS"
