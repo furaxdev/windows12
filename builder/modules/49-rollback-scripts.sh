@@ -47,7 +47,10 @@ module_49_rollback_scripts() {
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"C:\FuraxWindows12\rollback\Rollback-FuraxWindows12.ps1\"' -Verb RunAs"
 BATEOF
     # CRLF requis (fichier .bat lu par cmd.exe) — conversion LF -> CRLF après écriture.
-    sed -i 's/$/\r/' "$bat_dest"
+    # `sed -i` déclenche un warning inoffensif ("preserving permissions... No data
+    # available") sur le point de montage FUSE du WIM (xattrs non supportés) — évité en
+    # passant par un fichier temporaire + mv plutôt que l'édition in-place de sed.
+    sed 's/$/\r/' "$bat_dest" > "$bat_dest.crlf" && mv "$bat_dest.crlf" "$bat_dest"
     log_info "Raccourci bureau déposé : Users\\Public\\Desktop\\Rollback Furax Windows 12.bat (double-clic -> exécution élevée via UAC)."
     bat_ok=1
   else
