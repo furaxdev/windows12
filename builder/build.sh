@@ -40,7 +40,7 @@ Options:
   --profile <nom>       Profil de fonctionnalités : minimal (défaut) | full
   --wim-index <N>       Index de l'image dans install.wim/install.esd (défaut : 1)
   --work-dir <chemin>   Dossier de travail (défaut : $WORK_ROOT)
-  --out <chemin>        Chemin de l'ISO générée (défaut : $OUT_DIR/FuraxWindows12-Beta-x64.iso)
+  --out <chemin>        Chemin de l'ISO générée (défaut : $OUT_DIR/FuraxWindows12-Beta-x86.iso)
   --keep-work           Ne pas supprimer le dossier de travail après un build réussi
   --dry-run             N'exécute aucune commande destructive/de montage, affiche le plan
   -h, --help            Affiche cette aide
@@ -81,7 +81,7 @@ LOG_FILE="$WORK_DIR/build.log"
 REPORT_FILE="$OUT_DIR/rapport-build-$BUILD_ID.txt"
 : > "$LOG_FILE"
 
-[[ -z "$OUT_ISO" ]] && OUT_ISO="$OUT_DIR/FuraxWindows12-Beta-x64.iso"
+[[ -z "$OUT_ISO" ]] && OUT_ISO="$OUT_DIR/FuraxWindows12-Beta-x86.iso"
 
 BUILD_START_TS="$(_log_ts)"
 

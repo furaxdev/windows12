@@ -165,7 +165,7 @@ cleanup_on_exit() {
   if [[ -n "${REPORT_FILE:-}" ]]; then
     write_report "$REPORT_FILE" || true
     if [[ -n "${OUT_DIR:-}" ]]; then
-      cp -f "$REPORT_FILE" "$OUT_DIR/FuraxWindows12-Beta-x64.rapport.txt" 2>/dev/null || true
+      cp -f "$REPORT_FILE" "$OUT_DIR/FuraxWindows12-Beta-x86.rapport.txt" 2>/dev/null || true
     fi
   fi
 
