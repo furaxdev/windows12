@@ -27,6 +27,13 @@
 # Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
 #   TaskbarAl = 1  (icônes centrées - déjà le défaut Windows 11, réglé explicitement)
 #
+# ⚠️ Backlog #70 (Windows Spotlight sur l'écran de verrouillage) INTENTIONNELLEMENT PAS
+# implémenté ici : vérifié par extraction directe de NTUSER.DAT depuis une vraie ISO
+# Windows 11 25H2 stock (20/09/2026) que RotatingLockScreenEnabled et
+# RotatingLockScreenOverlayEnabled valent DÉJÀ 1 par défaut sur cette édition/build —
+# les écrire n'aurait aucun effet réel, et notre rollback aurait supprimé une clé stock au
+# lieu de "revenir au défaut". Backlog #70 mis à jour en conséquence dans docs/FEATURES.md.
+#
 # ⚠️ Honnêteté : ceci NE reproduit PAS la barre des tâches flottante en pilule avec coins
 # très arrondis et marges vues dans la vidéo (docs/FEATURES.md : nécessite un patch de
 # shell tiers type Windhawk, PLANNED, pas fait ici faute de temps/de validation robuste).

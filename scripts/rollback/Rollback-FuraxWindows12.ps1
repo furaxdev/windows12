@@ -147,6 +147,17 @@ if (Test-Path $gameConfigKey) {
     Write-Ok "GameDVR_Enabled supprimé (enregistrement Game Bar en arrière-plan revient au défaut)."
 }
 
+# --- 5. Nettoyage du raccourci bureau (auto-suppression, ne se supprime pas lui-même
+# en cours d'exécution) ---
+Write-Step "Raccourci bureau"
+$desktopShortcut = "$env:PUBLIC\Desktop\Rollback Furax Windows 12.bat"
+if (Test-Path $desktopShortcut) {
+    Remove-Item -Path $desktopShortcut -Force -ErrorAction SilentlyContinue
+    Write-Ok "Raccourci bureau supprimé (plus besoin une fois le rollback fait)."
+} else {
+    Write-Skip "Raccourci bureau déjà absent."
+}
+
 Write-Host ""
 Write-Host "Rollback terminé. Un redémarrage ou une déconnexion/reconnexion peut être nécessaire" -ForegroundColor Yellow
 Write-Host "pour que l'explorateur/le bureau reflètent immédiatement tous les changements." -ForegroundColor Yellow

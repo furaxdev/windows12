@@ -63,11 +63,23 @@ module_70_validate_output() {
     fi
   fi
 
+  local shortcut_found="non vérifié"
+  if [[ -n "${WIM_PATH:-}" && -f "$WIM_PATH" ]]; then
+    log_info "Vérification de la présence du raccourci bureau DANS $WIM_PATH..."
+    if wimlib-imagex extract "$WIM_PATH" "$WIM_INDEX" "/Users/Public/Desktop/Rollback Furax Windows 12.bat" --to-stdout >>"$LOG_FILE" 2>&1; then
+      shortcut_found="present"
+      log_info "Raccourci bureau du rollback confirmé à l'intérieur de l'image Windows."
+    else
+      shortcut_found="absent"
+      log_warn "Raccourci bureau du rollback absent de l'image Windows — vérifier module 49-rollback-scripts.sh."
+    fi
+  fi
+
   OUT_SHA256=$(sha256sum "$OUT_ISO" | awk '{print $1}')
   log_info "SHA-256 de l'ISO générée : $OUT_SHA256"
 
   log_warn "Validation structurelle uniquement : le boot réel de cette ISO N'A PAS été vérifié par ce module. Utilise vm/test-vm.sh pour un test de démarrage en VM (voir docs/TESTING.md) avant de considérer l'ISO comme fiable."
 
-  report_step "70-validate-output" "OK" "SHA-256=$OUT_SHA256 marqueur=$marker_found"
+  report_step "70-validate-output" "OK" "SHA-256=$OUT_SHA256 marqueur=$marker_found raccourci_rollback=$shortcut_found"
   return 0
 }
