@@ -262,7 +262,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 | 67 | Codecs additionnels pré-installés (via provisioning) | `PLANNED` | Provisioning package offline, faisable |
 | 68 | Egaliseur audio système accessible depuis Quick Settings | `CONCEPT ONLY` | Pas de mécanisme natif, dépend du pilote audio |
 | 69 | Mode "Cinéma" (assombrit l'écran, désactive notifications) en un raccourci | `PLANNED` | Combo Focus Assist + luminosité, scriptable |
-| 70 | Wallpaper Spotlight (rotation quotidienne d'images officielles Bing/Windows) activé par défaut | `IMPLEMENTABLE` | Natif Win11, juste activer le réglage par défaut |
+| 70 | Windows Spotlight (rotation quotidienne d'images officielles Bing/Windows) sur l'écran de verrouillage activé par défaut | `IMPLEMENTABLE` (déjà natif, rien à faire) | **Vérifié par extraction directe de `NTUSER.DAT` depuis une vraie ISO Windows 11 25H2 stock (20/09/2026)** : `ContentDeliveryManager\RotatingLockScreenEnabled` et `RotatingLockScreenOverlayEnabled` valent **déjà 1 par défaut** sur cette édition/build. Une tentative d'implémentation dans `46-theme.sh` a été écrite puis **retirée** après ce constat — les écrire n'aurait eu aucun effet réel, et le rollback associé aurait supprimé des clés stock au lieu de "revenir au défaut" (bug détecté par `test_rollback_offline.sh`, qui a échoué 1/33 sur exactement cette clé — la mécanique de vérification a fonctionné comme prévu). |
 | 71 | Thème sonore complet "Furax" (démarrage, notifications, erreurs) | `PLANNED` | Pack `.wav` + fichier `.theme`, mécanisme natif |
 | 72 | Capture d'écran améliorée (annotations rapides intégrées) | `IMPLEMENTABLE` | Déjà natif Win11 (Outil Capture d'écran) |
 | 73 | Enregistrement d'écran système avec watermark Furax optionnel | `CONCEPT ONLY` | Nécessiterait modification de l'app Xbox Game Bar, non supporté |
@@ -279,7 +279,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 | 79 | Point de restauration auto créé juste après l'installation | `PLANNED` | Script post-install PowerShell |
 | 80 | Vérification d'intégrité (SFC/DISM) programmée en tâche planifiée mensuelle | `PLANNED` | Tâche planifiée offline, faisable |
 | 81 | Sauvegarde auto vers un dossier local dès la configuration initiale | `PLANNED` | Configuration "Historique des fichiers" via script |
-| 82 | Rollback en un clic depuis un raccourci bureau (déjà en partie fait) | `IMPLEMENTED` | Voir `scripts/rollback/Rollback-FuraxWindows12.ps1`, juste ajouter un raccourci bureau au dépôt |
+| 82 | Rollback en un clic depuis un raccourci bureau | `IMPLEMENTED` | `builder/modules/49-rollback-scripts.sh` dépose `Users\Public\Desktop\Rollback Furax Windows 12.bat` (lanceur PowerShell élevé via UAC, visible pour tous les comptes) en plus du script complet. `.bat` texte plutôt que `.lnk` binaire — plus simple et fiable à générer offline. Présence vérifiée dans le WIM généré par `70-validate-output.sh`. Auto-suppression du raccourci une fois le rollback exécuté. |
 | 83 | Rapport de santé système (espace disque, RAM, température) au démarrage | `CONCEPT ONLY` | Nécessiterait une app de monitoring dédiée |
 | 84 | Nettoyage auto des fichiers temporaires programmé | `IMPLEMENTABLE` | Tâche planifiée native `cleanmgr` |
 | 85 | Mode "installation silencieuse" complet sans interaction (entreprise) | `PLANNED` | `autounattend.xml` poussé à fond, cas d'usage différent du profil grand public |
