@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  autounattend.xml — Furax Windows 12 Beta
+  Placé à la racine de l'ISO par builder/modules/43-autounattend.sh. Windows Setup (WinPE)
+  cherche automatiquement ce fichier à la racine du média de boot — mécanisme Microsoft
+  standard et documenté (schéma "unattend" officiel), pas un patch.
+
+  Ce que ce fichier fait :
+  - Passe windowsPE : langue/clavier par défaut (anglais US, l'ISO source est
+    EnglishInternational — mettre une autre UILanguage nécessiterait un pack de langue
+    absent de cette ISO), accepte l'EULA (UserData/AcceptEula), sélectionne l'index WIM 1
+    automatiquement (saute l'écran "Choisissez le système d'exploitation à installer").
+  - Passe oobeSystem : saute les écrans compte Microsoft/OEM/Wi-Fi obligatoires à l'OOBE,
+    crée un compte LOCAL "Furax" (administrateur), fuseau horaire Europe/Paris.
+
+  Ce que ce fichier NE fait PAS :
+  - Il ne partitionne PAS le disque à ta place (pas de section <DiskConfiguration>) —
+    l'écran de sélection du disque/partition reste affiché, volontairement : c'est le
+    seul écran où une automatisation à l'aveugle serait dangereuse (mauvais disque =
+    perte de données), donc laissé à l'utilisateur.
+  - Il ne définit PAS de mot de passe pour le compte "Furax" (aucun mot de passe en clair
+    stocké dans ce repo public) — Windows demandera d'en définir un à la première
+    connexion, ou le compte restera sans mot de passe selon la configuration Windows.
+    Modifie <Password> toi-même si tu veux un mot de passe pré-rempli (déconseillé dans
+    un fichier versionné).
+
+  ⚠️ Honnêteté : ce fichier est un XML valide et bien formé (vérifié par
+  builder/modules/43-autounattend.sh à chaque build, xml.dom.minidom), construit à partir
+  du schéma "unattend" officiel Microsoft documenté. Il n'a PAS pu être testé sur un vrai
+  boot Windows Setup dans cet environnement de développement (pas de VM Windows démarrable
+  ici, voir docs/TROUBLESHOOTING.md) — le comportement réel (quels écrans sont
+  effectivement sautés, dans quel ordre) reste `UNCONFIRMED` tant qu'un test réel n'a pas
+  été fait. Voir docs/FEATURES.md, item #76 du backlog.
+-->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE"
+                processorArchitecture="amd64"
+                publicKeyToken="31bf3856ad364e35"
+                language="neutral"
+                versionScope="nonSxS"
+                xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <SetupUILanguage>
+        <UILanguage>en-US</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>0409:00000409</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+
+    <component name="Microsoft-Windows-Setup"
+                processorArchitecture="amd64"
+                publicKeyToken="31bf3856ad364e35"
+                language="neutral"
+                versionScope="nonSxS"
+                xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+      </UserData>
+      <ImageInstall>
+        <OSImage>
+          <InstallFrom>
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/INDEX</Key>
+              <Value>1</Value>
+            </MetaData>
+          </InstallFrom>
+          <InstallToAvailablePartition>false</InstallToAvailablePartition>
+        </OSImage>
+      </ImageInstall>
+    </component>
+  </settings>
+
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup"
+                processorArchitecture="amd64"
+                publicKeyToken="31bf3856ad364e35"
+                language="neutral"
+                versionScope="nonSxS"
+                xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add">
+            <Name>Furax</Name>
+            <Group>Administrators</Group>
+            <DisplayName>Furax</DisplayName>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+      <TimeZone>Romance Standard Time</TimeZone>
+    </component>
+  </settings>
+
+</unattend>

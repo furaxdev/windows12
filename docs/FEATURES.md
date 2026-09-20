@@ -273,7 +273,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 
 | # | Idée | État | Note |
 |---|---|---|---|
-| 76 | `autounattend.xml` complet (langue, edition, partitionnement pré-rempli) | `PLANNED` | Mécanisme Microsoft standard, gros gain d'ergonomie pour l'installeur |
+| 76 | `autounattend.xml` (langue/clavier, EULA, sélection d'édition, compte local, écrans OOBE sautés) | `PARTIAL` | `builder/modules/43-autounattend.sh` : fichier déposé à la racine de l'ISO, XML validé bien formé et confirmé présent dans l'ISO générée (20/09/2026). **Comportement réel au boot Windows Setup `UNCONFIRMED`** (jamais testé sur un vrai démarrage dans cet environnement de dev) — ne PAS présenter comme "les écrans sont sautés" tant qu'un test réel n'a pas confirmé. Volontairement PAS de partitionnement automatique (écran disque laissé à l'utilisateur, trop risqué à automatiser à l'aveugle). |
 | 77 | Écran de bienvenue post-install "Bienvenue sur Furax Windows 12" | `PLANNED` | Script `RunOnce` au premier login, faisable |
 | 78 | Mises à jour Windows différées de X jours par défaut (stabilité) | `IMPLEMENTED` | `builder/modules/47-privacy-performance.sh` : `HKLM\Policies\Microsoft\Windows\WindowsUpdate\DeferFeatureUpdatesPeriodInDays`=7. Écrit + relu avec succès. |
 | 79 | Point de restauration auto créé juste après l'installation | `PLANNED` | Script post-install PowerShell |

@@ -16,6 +16,12 @@ features:
   # depuis la clé USB) — PAS le bureau une fois installé (ça, c'est "wallpaper" ci-dessus).
   # Voir builder/modules/44-installer-background.sh.
   installer_background: true
+  # Dépose autounattend.xml à la racine de l'ISO : accepte l'EULA, saute la
+  # sélection d'édition (index 1), compte local "Furax" à l'OOBE (pas de compte
+  # Microsoft forcé), saute les écrans Wi-Fi/OEM obligatoires. Voir
+  # builder/modules/43-autounattend.sh. Comportement réel au boot UNCONFIRMED
+  # (jamais testé sur un vrai Windows Setup dans cet environnement).
+  autounattend: true
   # "By FuraxDev" dans winver + informations OEM. Voir builder/modules/42-branding.sh.
   branding: true
   # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.

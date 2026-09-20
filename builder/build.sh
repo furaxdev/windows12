@@ -112,6 +112,11 @@ if grep -q '^\s*installer_background:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_INSTALLER_BACKGROUND=0
 fi
+if grep -q '^\s*autounattend:\s*true' "$PROFILE_FILE"; then
+  FEATURE_AUTOUNATTEND=1
+else
+  FEATURE_AUTOUNATTEND=0
+fi
 if grep -q '^\s*branding:\s*true' "$PROFILE_FILE"; then
   FEATURE_BRANDING=1
 else
@@ -135,6 +140,7 @@ fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BACKGROUND"
+log_info "Feature autounattend (profil $PROFILE) : $FEATURE_AUTOUNATTEND (comportement réel au boot Setup UNCONFIRMED, voir docs/FEATURES.md #76)"
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
 log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFORMANCE"
@@ -143,6 +149,13 @@ log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATUR
 # --- Pipeline ---
 module_00_validate
 module_10_extract
+
+if [[ "$FEATURE_AUTOUNATTEND" -eq 1 ]]; then
+  module_43_autounattend
+else
+  log_step "43-autounattend : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "43-autounattend" "SKIPPED" "désactivé par le profil"
+fi
 
 if [[ "$FEATURE_INSTALLER_BACKGROUND" -eq 1 ]]; then
   module_44_installer_background

@@ -10,6 +10,12 @@ features:
   trivial_marker: true
   wallpaper: true
   installer_background: true
+  # Dépose autounattend.xml à la racine de l'ISO : accepte l'EULA, saute la
+  # sélection d'édition (index 1), compte local "Furax" à l'OOBE (pas de compte
+  # Microsoft forcé), saute les écrans Wi-Fi/OEM obligatoires. Voir
+  # builder/modules/43-autounattend.sh. Comportement réel au boot UNCONFIRMED
+  # (jamais testé sur un vrai Windows Setup dans cet environnement).
+  autounattend: true
   branding: true
   theme: true
   privacy_performance: true
