@@ -8,7 +8,11 @@ Ce n'est **pas** un fork du noyau Windows, **pas** un contournement d'activation
 
 ## Branche `x86`
 
-Variante expérimentale basée sur **Windows 10 x86 (32-bit)** officiel, sur une branche séparée (`x86`) pour ne pas mélanger avec le pipeline principal Windows 11 x64. **Statut : `PLANNED`, bloquée en attente d'une ISO Windows 10 x86 officielle** (même règle que pour Windows 11 : l'utilisateur doit la fournir lui-même via microsoft.com, ce projet n'en télécharge/distribue aucune). Le pipeline de build (extraction, montage WIM, édition registre offline, reconstruction ISO) est en grande partie architecture-agnostique et devrait se réutiliser tel quel ; les différences attendues (à vérifier une fois l'ISO fournie, pas supposées à l'avance) : certaines clés de registre du module `47-privacy-performance.sh` n'existent pas sous Windows 10 (ex. `WindowsCopilot`, ajouté bien plus tard), et le boot BIOS/UEFI32 diffère du BIOS/UEFI64 utilisé pour Windows 11.
+Variante basée sur **Windows 10 22H2 x86 (32-bit)** officiel, sur une branche séparée (`x86`) pour ne pas mélanger avec le pipeline principal Windows 11 x64.
+
+**Statut (20/09/2026) : pipeline exécuté avec succès de bout en bout contre une vraie ISO Windows 10 22H2 x86 officielle.** Extraction, `autounattend.xml` (corrigé pour `processorArchitecture="x86"`, une erreur héritée de la branche x64 qui aurait fait ignorer le fichier par Windows Setup), fond d'écran de l'assistant Setup (`boot.wim`), branding, thème, confidentialité/performance : tout s'applique et se relit sans erreur. ISO générée et validée structurellement (`FuraxWindows12-Beta-x86.iso`).
+
+**Ce qui n'est PAS confirmé** (même limite que la branche x64) : le boot réel de cette ISO n'a pas pu être testé dans cet environnement de développement (pas de VM Windows démarrable ici). Le comportement réel d'`autounattend.xml` au boot reste `UNCONFIRMED`. Note honnête sur le module `47-privacy-performance.sh` : la clé `WindowsCopilot\TurnOffWindowsCopilot` s'écrit sans erreur sur cette image Windows 10 (le mécanisme `--create-keys` ne vérifie pas que la fonctionnalité existe), mais Copilot n'existe pas sur Windows 10 — cette clé y est donc probablement inerte, pas un vrai bug mais un effet sans conséquence à ne pas présenter comme une vraie désactivation de fonctionnalité sur cette branche.
 
 ## Documents clés
 
