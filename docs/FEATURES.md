@@ -163,7 +163,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 | 3 | Mode "batterie longue durée" pré-configuré (plan d'alimentation custom) | `PLANNED` | Registre `powercfg`, faisable offline |
 | 4 | Détection auto de la RAM dispo côté VM de test et ajustement auto (déjà partiellement fait dans `launch-viewer.sh`) | `PARTIAL` | À généraliser (voir section resources ci-dessous) |
 | 5 | Nettoyage auto des anciens builds/ISOs dans `build/_out` (éviter accumulation disque) | `PLANNED` | Flag `--clean-old-outputs` sur `build.sh` |
-| 6 | Édition WIM "Core"/"Home" par défaut plutôt que Pro (empreinte disque installée plus faible) | `IMPLEMENTABLE` | Déjà possible via `--wim-index`, pas encore le défaut documenté clairement |
+| 6 | Édition WIM "Core"/"Home" par défaut plutôt que Pro (empreinte disque installée plus faible) | `IMPLEMENTED` | **Déjà le comportement réel, vérifié dans les logs** : `--wim-index` par défaut = 1, et sur l'ISO Windows 11 25H2 EnglishInternational officielle, l'index 1 correspond bien à l'édition "Core" (confirmé dans `20-identify.sh` → "Édition détectée : ... / Core / ..." sur chaque build réel). `--wim-index N` reste disponible pour choisir une autre édition (Pro, etc.) si besoin. |
 | 7 | Désactivation de la recherche indexée par défaut (moins de CPU/disque en fond) | `PLANNED` | Registre `WSearch` service start type |
 | 8 | Superfetch/Prefetch désactivé pour SSD | `PLANNED` | Registre `SysMain` |
 | 9 | Mode "faible RAM" désactivant les effets de transparence/animations automatiquement si <4 Go détectés | `PLANNED` | Nécessiterait un script post-install (PowerShell), pas encore écrit |
