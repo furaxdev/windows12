@@ -147,6 +147,27 @@ if (Test-Path $gameConfigKey) {
     Write-Ok "GameDVR_Enabled supprimé (enregistrement Game Bar en arrière-plan revient au défaut)."
 }
 
+# Windows Search (WSearch) et Superfetch (SysMain) : contrairement aux clés ci-dessus
+# (absentes par défaut, donc supprimées), Start=2 (Automatique) EXISTE déjà en stock sur
+# ces deux services — le rollback doit donc RESTAURER 2, pas supprimer la valeur (la
+# supprimer casserait la définition du service). CurrentControlSet fonctionne ici car ce
+# script tourne DANS un Windows démarré (résolu par le noyau), contrairement au hors-ligne.
+$wsearchKey = "HKLM:\SYSTEM\CurrentControlSet\Services\WSearch"
+if (Test-Path $wsearchKey) {
+    Set-ItemProperty -Path $wsearchKey -Name "Start" -Value 2 -Type DWord
+    Write-Ok "WSearch (Windows Search) : Start restauré à 2 (Automatique)."
+} else {
+    Write-Skip "Clé de service WSearch introuvable."
+}
+
+$sysMainKey = "HKLM:\SYSTEM\CurrentControlSet\Services\SysMain"
+if (Test-Path $sysMainKey) {
+    Set-ItemProperty -Path $sysMainKey -Name "Start" -Value 2 -Type DWord
+    Write-Ok "SysMain (Superfetch) : Start restauré à 2 (Automatique)."
+} else {
+    Write-Skip "Clé de service SysMain introuvable."
+}
+
 # --- 5. Nettoyage du raccourci bureau (auto-suppression, ne se supprime pas lui-même
 # en cours d'exécution) ---
 Write-Step "Raccourci bureau"
