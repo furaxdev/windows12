@@ -12,6 +12,11 @@
 #   Microsoft standard (ADMX WindowsCopilot.admx, ajoutée avec le déploiement de Copilot).
 # - Policies\Microsoft\Windows\WindowsUpdate\DeferFeatureUpdatesPeriodInDays = 7. Clé de
 #   policy Microsoft Update standard (ADMX WindowsUpdate.admx).
+# - Policies\Microsoft\Windows Defender Security Center\Notifications\DisableNotifications
+#   = 1 (backlog #15 — moins de popups Defender). Clé de policy Microsoft standard (ADMX
+#   WindowsDefenderSecurityCenter.admx, "Turn off/on all notifications"). Ne désactive QUE
+#   les notifications visuelles du Centre de sécurité Windows — la protection Defender
+#   elle-même (temps réel, analyse) n'est PAS touchée par cette clé.
 #
 # Ruche NTUSER.DAT du profil "Default" (HKCU pour les NOUVEAUX comptes créés à l'OOBE,
 # même mécanisme que 45-wallpaper.sh/46-theme.sh) :
@@ -75,7 +80,9 @@ module_47_privacy_performance() {
       --create-keys >>"$LOG_FILE" 2>&1 && any=1 || ok=0
     $set_val "$software_hive" 'Policies\Microsoft\Windows\WindowsUpdate' "DeferFeatureUpdatesPeriodInDays" "dword" "7" \
       --create-keys >>"$LOG_FILE" 2>&1 && any=1 || ok=0
-    log_info "Ruche SOFTWARE : télémétrie=Basique, Copilot désactivé, mises à jour de fonctionnalités différées de 7 jours."
+    $set_val "$software_hive" 'Policies\Microsoft\Windows Defender Security Center\Notifications' "DisableNotifications" "dword" "1" \
+      --create-keys >>"$LOG_FILE" 2>&1 && any=1 || ok=0
+    log_info "Ruche SOFTWARE : télémétrie=Basique, Copilot désactivé, mises à jour de fonctionnalités différées de 7 jours, notifications Defender désactivées."
   else
     log_warn "Ruche SOFTWARE introuvable ($software_hive) — section HKLM ignorée."
   fi
@@ -122,7 +129,7 @@ module_47_privacy_performance() {
   fi
 
   if [[ "$ok" -eq 1 ]]; then
-    report_step "47-privacy-performance" "OK" "télémétrie/Copilot/updates (SOFTWARE) + suggestions/presse-papiers/mode jeu (Default)${system_detail}"
+    report_step "47-privacy-performance" "OK" "télémétrie/Copilot/updates/notifications Defender (SOFTWARE) + suggestions/presse-papiers/mode jeu (Default)${system_detail}"
   else
     log_warn "Échec partiel de l'écriture des réglages confidentialité/performance (voir $LOG_FILE)."
     report_step "47-privacy-performance" "PARTIAL" "échec partiel, voir log"
