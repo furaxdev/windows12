@@ -35,5 +35,7 @@ features:
   first_logon: true
   branding: true
   theme: true
+  # Variante du thème : dark (défaut) ou light. Voir backlog #92 / 46-theme.sh.
+  theme_variant: dark
   privacy_performance: true
   taskbar_floating_pill_experimental: false

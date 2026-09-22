@@ -22,6 +22,8 @@ features:
   first_logon: true
   branding: true
   theme: true
+  # Variante du thème : dark (défaut) ou light. Voir backlog #92 / 46-theme.sh.
+  theme_variant: dark
   privacy_performance: true
   # EXPERIMENTAL / UNTESTED — voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md.
   # Reste désactivé même dans le profil "full" : ce n'est pas un tweak natif vérifié,
