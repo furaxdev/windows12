@@ -60,6 +60,7 @@ check "OEMInformation absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Mic
 check "AllowTelemetry absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\DataCollection' AllowTelemetry >/dev/null 2>&1; echo $?)
 check "TurnOffWindowsCopilot absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot >/dev/null 2>&1; echo $?)
 check "FuraxWindows12FirstLogon absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon >/dev/null 2>&1; echo $?)
+check "DisableNotifications (Defender) absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications >/dev/null 2>&1; echo $?)
 check "WSearch Start = 2 par défaut (stock, Automatique)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\WSearch" Start)" == "2" ]]; echo $?)
 check "SysMain Start = 2 par défaut (stock, Automatique)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\SysMain" Start)" == "2" ]]; echo $?)
 
@@ -79,6 +80,7 @@ $SET "$NTUSER" 'Software\Microsoft\Clipboard' EnableClipboardHistory dword 1 --c
 $SET "$NTUSER" 'Software\Microsoft\GameBar' AllowAutoGameMode dword 1 --create-keys >/dev/null
 $SET "$NTUSER" 'System\GameConfigStore' GameDVR_Enabled dword 0 --create-keys >/dev/null
 $SET "$SOFTWARE" 'Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon string "powershell.exe -File test.ps1" --create-keys >/dev/null
+$SET "$SOFTWARE" 'Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications dword 1 --create-keys >/dev/null
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\WSearch" Start dword 4 --create-keys >/dev/null
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\SysMain" Start dword 4 --create-keys >/dev/null
 
@@ -95,6 +97,7 @@ check "EnableClipboardHistory = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microso
 check "AllowAutoGameMode = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\GameBar' AllowAutoGameMode)" == "1" ]]; echo $?)
 check "GameDVR_Enabled = 0" $([[ "$(hivexget "$NTUSER" '\System\GameConfigStore' GameDVR_Enabled)" == "0" ]]; echo $?)
 check "FuraxWindows12FirstLogon écrit" $([[ -n "$(hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon)" ]]; echo $?)
+check "DisableNotifications (Defender) = 1" $([[ "$(hivexget "$SOFTWARE" '\Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications)" == "1" ]]; echo $?)
 check "WSearch Start = 4 (Désactivé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\WSearch" Start)" == "4" ]]; echo $?)
 check "SysMain Start = 4 (Désactivé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\SysMain" Start)" == "4" ]]; echo $?)
 
@@ -114,6 +117,7 @@ $DEL_VAL "$NTUSER" 'Software\Microsoft\Clipboard' EnableClipboardHistory >/dev/n
 $DEL_VAL "$NTUSER" 'Software\Microsoft\GameBar' AllowAutoGameMode >/dev/null
 $DEL_VAL "$NTUSER" 'System\GameConfigStore' GameDVR_Enabled >/dev/null
 $DEL_VAL "$SOFTWARE" 'Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon >/dev/null
+$DEL_VAL "$SOFTWARE" 'Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications >/dev/null
 # WSearch/SysMain : contrairement aux clés ci-dessus (absentes par défaut -> supprimées),
 # Start=2 existe déjà en stock -> le rollback RESTAURE 2, ne supprime pas la valeur.
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\WSearch" Start dword 2 --create-keys >/dev/null
@@ -134,6 +138,7 @@ check "EnableClipboardHistory de nouveau absent" $(! hivexget "$NTUSER" '\Softwa
 check "AllowAutoGameMode de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\GameBar' AllowAutoGameMode >/dev/null 2>&1; echo $?)
 check "GameDVR_Enabled de nouveau absent" $(! hivexget "$NTUSER" '\System\GameConfigStore' GameDVR_Enabled >/dev/null 2>&1; echo $?)
 check "FuraxWindows12FirstLogon de nouveau absent" $(! hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon >/dev/null 2>&1; echo $?)
+check "DisableNotifications (Defender) de nouveau absent" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications >/dev/null 2>&1; echo $?)
 check "WSearch Start restauré à 2 (pas supprimé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\WSearch" Start)" == "2" ]]; echo $?)
 check "SysMain Start restauré à 2 (pas supprimé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\SysMain" Start)" == "2" ]]; echo $?)
 

@@ -122,6 +122,12 @@ if (Test-Path $wuKey) {
     Write-Ok "DeferFeatureUpdatesPeriodInDays supprimé (updates de fonctionnalités ne sont plus différés)."
 }
 
+$defenderNotifKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender Security Center\Notifications"
+if (Test-Path $defenderNotifKey) {
+    Remove-ItemProperty -Path $defenderNotifKey -Name "DisableNotifications" -ErrorAction SilentlyContinue
+    Write-Ok "DisableNotifications supprimé (notifications Defender reviennent au comportement par défaut)."
+}
+
 # HKCU (profil courant) : suggestions Menu Démarrer, presse-papiers, Mode Jeu, Game Bar
 $cdmKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
 if (Test-Path $cdmKey) {
