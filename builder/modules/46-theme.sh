@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# 46-theme.sh — thème sombre par défaut + accent coloré sur la barre des tâches/Démarrer,
-# pour se rapprocher de l'ambiance sombre/colorée vue dans la vidéo, en s'appuyant
+# 46-theme.sh — thème sombre (par défaut) OU clair + accent coloré sur la barre des
+# tâches/Démarrer, pour se rapprocher de l'ambiance vue dans la vidéo, en s'appuyant
 # UNIQUEMENT sur des réglages natifs Windows 11 documentés (aucun patch de shell).
+#
+# Variante contrôlée par $THEME_VARIANT ("dark" par défaut, ou "light" — backlog #92) :
+# seuls AppsUseLightTheme/SystemUsesLightTheme changent de valeur, tout le reste
+# (transparence, accent, icônes centrées) est identique dans les deux variantes — c'est
+# la même identité visuelle Furax, juste plus ou moins sombre.
 #
 # Clés utilisées, toutes sous Users/Default/NTUSER.DAT (profil par défaut -> hérité par
 # tout nouveau compte créé à l'OOBE) :
 #
 # Software\Microsoft\Windows\CurrentVersion\Themes\Personalize
-#   AppsUseLightTheme    = 0   (apps en mode sombre)
-#   SystemUsesLightTheme = 0   (barre des tâches/Démarrer en mode sombre)
+#   AppsUseLightTheme    = 0 (dark) ou 1 (light)
+#   SystemUsesLightTheme = 0 (dark) ou 1 (light)  -- barre des tâches/Démarrer
 #   EnableTransparency   = 1   (effets de transparence/flou, Acrylic/Mica)
 #   ColorPrevalence      = 1   (la couleur d'accentuation apparaît sur la barre des
 #                                tâches/Démarrer/barres de titre - désactivé par défaut
@@ -41,12 +46,20 @@
 # ne remplace pas la refonte structurelle de la barre.
 
 module_46_theme() {
-  log_step "46-theme : thème sombre + accent coloré (réglages natifs)"
+  local variant="${THEME_VARIANT:-dark}"
+  if [[ "$variant" != "dark" && "$variant" != "light" ]]; then
+    log_warn "theme_variant='$variant' invalide (attendu dark|light) — repli sur 'dark'."
+    variant="dark"
+  fi
+  local light_flag=0
+  [[ "$variant" == "light" ]] && light_flag=1
+
+  log_step "46-theme : thème $variant + accent coloré (réglages natifs)"
 
   local ntuser_hive="$MOUNT_DIR/Users/Default/NTUSER.DAT"
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
-    log_info "(dry-run) écrirait les réglages de thème sombre/accent dans $ntuser_hive"
+    log_info "(dry-run) écrirait les réglages de thème $variant/accent dans $ntuser_hive"
     report_step "46-theme" "DRY-RUN"
     return 0
   fi
@@ -65,9 +78,9 @@ module_46_theme() {
   local ok=1
   local set_val="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_set_value.py"
 
-  $set_val "$ntuser_hive" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' "AppsUseLightTheme" "dword" "0" \
+  $set_val "$ntuser_hive" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' "AppsUseLightTheme" "dword" "$light_flag" \
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0
-  $set_val "$ntuser_hive" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' "SystemUsesLightTheme" "dword" "0" \
+  $set_val "$ntuser_hive" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' "SystemUsesLightTheme" "dword" "$light_flag" \
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0
   $set_val "$ntuser_hive" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' "EnableTransparency" "dword" "1" \
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0
@@ -81,8 +94,8 @@ module_46_theme() {
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0
 
   if [[ "$ok" -eq 1 ]]; then
-    log_info "Thème appliqué au profil par défaut : mode sombre + transparence + accent sur barre des tâches/Démarrer (dérivé du fond d'écran) + icônes centrées."
-    report_step "46-theme" "OK" "dark theme + ColorPrevalence + AutoColorization + TaskbarAl"
+    log_info "Thème appliqué au profil par défaut : mode $variant + transparence + accent sur barre des tâches/Démarrer (dérivé du fond d'écran) + icônes centrées."
+    report_step "46-theme" "OK" "$variant theme + ColorPrevalence + AutoColorization + TaskbarAl"
   else
     log_warn "Échec partiel de l'écriture du thème (voir $LOG_FILE)."
     report_step "46-theme" "PARTIAL" "échec partiel, voir log"

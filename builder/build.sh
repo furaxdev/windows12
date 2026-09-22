@@ -132,6 +132,9 @@ if grep -q '^\s*theme:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_THEME=0
 fi
+THEME_VARIANT=$(grep -oP '^\s*theme_variant:\s*\K\w+' "$PROFILE_FILE" || true)
+[[ -z "$THEME_VARIANT" ]] && THEME_VARIANT="dark"
+export THEME_VARIANT
 if grep -q '^\s*privacy_performance:\s*true' "$PROFILE_FILE"; then
   FEATURE_PRIVACY_PERFORMANCE=1
 else
@@ -148,7 +151,7 @@ log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BA
 log_info "Feature autounattend (profil $PROFILE) : $FEATURE_AUTOUNATTEND (comportement réel au boot Setup UNCONFIRMED, voir docs/FEATURES.md #76)"
 log_info "Feature first_logon (profil $PROFILE) : $FEATURE_FIRST_LOGON (exécution réelle au boot UNCONFIRMED)"
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
-log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
+log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME (variante : $THEME_VARIANT)"
 log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFORMANCE"
 log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — documentation uniquement, jamais d'exécution auto)"
 

@@ -30,6 +30,8 @@ features:
   branding: true
   # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.
   theme: true
+  # Variante du thème : dark (défaut) ou light. Voir backlog #92 / 46-theme.sh.
+  theme_variant: dark
   # Télémétrie=Basique, Copilot désactivé, updates différés (HKLM) + suggestions Menu
   # Démarrer désactivées, historique presse-papiers et Mode Jeu activés (profil Default).
   # Voir builder/modules/47-privacy-performance.sh.

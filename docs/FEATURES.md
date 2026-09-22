@@ -294,7 +294,7 @@ Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, 
 | 89 | Police système alternative (si lisibilité confirmée) | `PLANNED` | Remplacement de police système = risque de casse UI, à tester prudemment |
 | 90 | Sons de démarrage custom | `PLANNED` | Mécanisme natif `.wav` de son de démarrage |
 | 91 | Écran de veille custom (vagues animées Furax) | `PLANNED` | `.scr` natif Windows, faisable |
-| 92 | Thème clair alternatif (pas que sombre) avec la même identité visuelle | `PLANNED` | Variante du travail déjà fait sur le thème sombre |
+| 92 | Thème clair alternatif (pas que sombre) avec la même identité visuelle | `IMPLEMENTED` | `builder/modules/46-theme.sh` accepte maintenant `$THEME_VARIANT` (dark/light) lu depuis le profil (`theme_variant:` dans le YAML). Nouveau profil `builder/profiles/light.yaml`. Transparence/accent/icônes centrées identiques dans les deux variantes. Vérifié : build réel avec `--profile light`, `AppsUseLightTheme`/`SystemUsesLightTheme` relus = 1 dans l'ISO générée ; non-régression confirmée avec `--profile minimal` (dark) sur le même run = 0. |
 | 93 | Fonds d'écran adaptatifs (différents par heure de la journée) | `IMPLEMENTABLE` | Natif Win11 ("Windows Spotlight" ou diaporama programmé) |
 | 94 | Pack de thème complet exportable/partageable (`.deskthemepack`) | `PLANNED` | Format natif Windows, packaging à faire |
 

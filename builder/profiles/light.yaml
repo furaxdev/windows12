@@ -1,0 +1,18 @@
+# Profil "light" — identique à "minimal", uniquement la variante de thème change
+# (backlog #92 : alternative claire avec la même identité visuelle Furax).
+
+name: light
+
+features:
+  trivial_marker: true
+  wallpaper: true
+  installer_background: true
+  autounattend: true
+  first_logon: true
+  branding: true
+  theme: true
+  # Seule différence avec minimal.yaml : thème clair au lieu de sombre. Transparence,
+  # accent dérivé du fond d'écran et icônes centrées restent identiques dans les deux cas.
+  theme_variant: light
+  privacy_performance: true
+  taskbar_floating_pill_experimental: false
