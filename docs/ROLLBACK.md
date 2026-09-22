@@ -8,7 +8,7 @@ Ce document concerne le rollback des personnalisations **appliquées par le buil
 
 | Aspect | Statut |
 |---|---|
-| Logique de rollback (registre) | `TESTED` — 28/28 vérifications automatiques (20/09/2026, après ajout du module 47), voir `docs/TESTING.md` |
+| Logique de rollback (registre) | `TESTED` — 37/37 vérifications automatiques (22/09/2026, après ajout de la ruche SYSTEM WSearch/SysMain au module 47), voir `docs/TESTING.md` |
 | Script PowerShell pour Windows démarré | `IMPLEMENTED` (écrit, miroir exact de la logique testée) / `UNTESTED` en conditions réelles (pas de boot Windows possible dans l'environnement de développement de ce projet) |
 | Restauration du fond d'écran | `IMPLEMENTED` — repose sur la sauvegarde automatique faite par `45-wallpaper.sh` (`img0.jpg.stock-original`) |
 | Raccourci bureau (`Rollback Furax Windows 12.bat`) | `IMPLEMENTED` — déposé par `49-rollback-scripts.sh` sur `Users\Public\Desktop`, présence vérifiée dans le WIM généré, contenu (apostrophes + CRLF) vérifié par extraction directe. Auto-suppression après exécution du rollback. |
@@ -48,7 +48,9 @@ Il est **idempotent** : le relancer plusieurs fois ne cause aucune erreur si une
 
 Résultat au 05/09/2026 : 12/12 vérifications passées. Trois bugs réels ont été trouvés et corrigés pendant ce développement (mauvais déballage de tuples retournés par l'API hivex, mauvaise signature de `node_delete_child`) — voir l'historique Git pour le détail.
 
-**Mise à jour du 20/09/2026** : extension à 33 vérifications après l'ajout du module `47-privacy-performance.sh` (télémétrie, Copilot, suggestions, presse-papiers, mode jeu). Un test a révélé un vrai problème (pas un faux positif) : une tentative d'ajouter le réglage Windows Spotlight (écran de verrouillage, backlog #70) a échoué la vérification "absent par défaut (stock)" — investigation a montré que `RotatingLockScreenEnabled`/`RotatingLockScreenOverlayEnabled` valent **déjà 1 par défaut** sur Windows 11 25H2 stock. La tentative a été retirée du builder plutôt que forcée à passer (voir `docs/FEATURES.md` #70). Résultat final après retrait : **28/28 vérifications passées**. C'est exactement le genre d'erreur qu'un rollback "écrit mais jamais testé" aurait laissé passer silencieusement jusqu'au premier essai réel — la mécanique de test a fait son travail.
+**Mise à jour du 20/09/2026** : extension à 33 vérifications après l'ajout du module `47-privacy-performance.sh` (télémétrie, Copilot, suggestions, presse-papiers, mode jeu). Un test a révélé un vrai problème (pas un faux positif) : une tentative d'ajouter le réglage Windows Spotlight (écran de verrouillage, backlog #70) a échoué la vérification "absent par défaut (stock)" — investigation a montré que `RotatingLockScreenEnabled`/`RotatingLockScreenOverlayEnabled` valent **déjà 1 par défaut** sur Windows 11 25H2 stock. La tentative a été retirée du builder plutôt que forcée à passer (voir `docs/FEATURES.md` #70). Résultat après retrait : **28/28 vérifications passées**. C'est exactement le genre d'erreur qu'un rollback "écrit mais jamais testé" aurait laissé passer silencieusement jusqu'au premier essai réel — la mécanique de test a fait son travail.
+
+**Mise à jour du 22/09/2026** : extension à 37 vérifications après l'ajout de la ruche SYSTEM (backlog #7/#8 : désactivation WSearch/SysMain) au module 47. Ce cas est différent de tous les autres : `WSearch\Start` et `SysMain\Start` **existent déjà en stock à 2** (Automatique) — contrairement aux autres clés de ce projet (absentes par défaut, donc supprimées au rollback), le rollback ici doit **restaurer 2**, jamais supprimer la valeur (la supprimer casserait la définition du service). Le harnais teste ce pattern distinct : confirme stock=2 → applique 4 → vérifie 4 → rollback → vérifie que c'est bien revenu à 2 (pas absent). Résultat : **37/37 vérifications passées**, valeurs `Start=4` confirmées par `hivexget` sur une vraie ISO générée.
 
 ### Ce qui n'est PAS testé
 

@@ -28,6 +28,19 @@
 #   de la Game Bar — préférence perf, PAS la Game Bar elle-même). Clé utilisée par le
 #   bouton "Enregistrements en arrière-plan" dans Paramètres > Jeux > Captures.
 #
+# Ruche SYSTEM (backlog #7 et #8 — désindexation recherche + Superfetch/SysMain) :
+# ⚠️ Piège classique évité ici, vérifié par inspection directe (22/09/2026) : une ruche
+# SYSTEM démontée n'a PAS de clé "CurrentControlSet" (c'est un lien symbolique résolu par
+# le noyau Windows en cours d'exécution, absent hors ligne) — seulement des
+# "ControlSet00N" réels. Le ControlSet ACTIF est déterminé dynamiquement en lisant
+# \Select\Default (confirmé =1 -> ControlSet001 sur l'ISO 25H2 testée), jamais codé en dur.
+# - <ControlSetActif>\Services\WSearch\Start  : 2 (Automatique, stock) -> 4 (Désactivé)
+# - <ControlSetActif>\Services\SysMain\Start  : 2 (Automatique, stock) -> 4 (Désactivé)
+# Valeurs de service standard Windows (0=Boot,1=System,2=Auto,3=Manuel,4=Désactivé).
+# ⚠️ Contrairement aux autres clés de ce module (absentes par défaut, donc supprimées au
+# rollback), celles-ci EXISTENT déjà en stock à 2 — le rollback doit donc restaurer 2,
+# PAS supprimer la valeur (supprimer Start casserait la définition du service).
+#
 # Honnêteté : write + relecture via hivexget confirmées dans un WIM généré (même mécanisme
 # que 42-branding.sh/46-theme.sh, déjà éprouvé). Le RENDU RÉEL dans l'UI Windows démarrée
 # n'est pas encore vérifié — voir docs/FEATURES.md, `TESTED` réservé à ça.
@@ -81,6 +94,27 @@ module_47_privacy_performance() {
     log_warn "Ruche NTUSER.DAT du profil Default introuvable ($ntuser_hive) — section HKCU ignorée."
   fi
 
+  local system_hive="$MOUNT_DIR/Windows/System32/config/SYSTEM"
+  local system_detail=""
+  if [[ -f "$system_hive" ]]; then
+    local active_cs
+    active_cs=$(hivexget "$system_hive" '\Select' Default 2>>"$LOG_FILE")
+    if [[ -n "$active_cs" ]]; then
+      local cs_path
+      cs_path=$(printf "ControlSet%03d" "$active_cs")
+      $set_val "$system_hive" "${cs_path}\\Services\\WSearch" "Start" "dword" "4" \
+        --create-keys >>"$LOG_FILE" 2>&1 && any=1 || ok=0
+      $set_val "$system_hive" "${cs_path}\\Services\\SysMain" "Start" "dword" "4" \
+        --create-keys >>"$LOG_FILE" 2>&1 && any=1 || ok=0
+      log_info "Ruche SYSTEM ($cs_path) : Windows Search (WSearch) et Superfetch (SysMain) désactivés (Start=4)."
+      system_detail=" + WSearch/SysMain désactivés (SYSTEM/$cs_path)"
+    else
+      log_warn "Impossible de déterminer le ControlSet actif (\\Select\\Default) — section SYSTEM ignorée."
+    fi
+  else
+    log_warn "Ruche SYSTEM introuvable ($system_hive) — section SYSTEM ignorée."
+  fi
+
   if [[ "$any" -eq 0 ]]; then
     log_warn "Aucune ruche disponible — étape SKIPPED."
     report_step "47-privacy-performance" "SKIPPED" "aucune ruche disponible"
@@ -88,7 +122,7 @@ module_47_privacy_performance() {
   fi
 
   if [[ "$ok" -eq 1 ]]; then
-    report_step "47-privacy-performance" "OK" "télémétrie/Copilot/updates (SOFTWARE) + suggestions/presse-papiers/mode jeu (Default)"
+    report_step "47-privacy-performance" "OK" "télémétrie/Copilot/updates (SOFTWARE) + suggestions/presse-papiers/mode jeu (Default)${system_detail}"
   else
     log_warn "Échec partiel de l'écriture des réglages confidentialité/performance (voir $LOG_FILE)."
     report_step "47-privacy-performance" "PARTIAL" "échec partiel, voir log"
