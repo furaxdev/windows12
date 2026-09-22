@@ -9,9 +9,16 @@
       pour que l'utilisateur puisse revenir en arrière facilement même sans le rollback
       applicatif (backlog #79).
     - Affiche un message de bienvenue ponctuel (backlog #77).
+    - Enregistre une tâche planifiée de nettoyage des fichiers temporaires (backlog #84).
+      Le backlog envisageait une fréquence "mensuelle" ; le déclencheur `-Monthly` n'existe
+      pas dans le module `ScheduledTasks` de PowerShell (seuls `-Daily`/`-Weekly`/`-Once`
+      sont exposés par `New-ScheduledTaskTrigger` sans passer par l'API CIM bas niveau,
+      plus fragile à écrire correctement sans pouvoir tester sur un vrai Windows démarré) —
+      HEBDOMADAIRE a été choisi à la place, écart assumé et documenté ici plutôt que
+      prétendre "mensuel" sans l'avoir vérifié.
 
     Chaque étape est dans son propre try/catch : un échec de l'une n'empêche pas
-    l'autre de s'exécuter, et aucune des deux n'empêche jamais l'ouverture de session.
+    les autres de s'exécuter, et aucune des trois n'empêche jamais l'ouverture de session.
 #>
 
 try {
@@ -38,4 +45,30 @@ try {
 } catch {
     # Non-fatal : environnement sans assembly WinForms disponible (rare), on n'empêche
     # jamais l'ouverture de session pour un message de bienvenue.
+}
+
+try {
+    $taskName = "FuraxWindows12-NettoyageTemp"
+    if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
+        # Résolus maintenant (contexte de l'utilisateur qui vient d'ouvrir sa session) et
+        # figés en chemins littéraux dans l'action planifiée : la tâche tourne en tant que
+        # SYSTEM, où $env:TEMP au moment de l'exécution pointerait vers le TEMP de SYSTEM,
+        # pas celui de cet utilisateur — d'où la résolution immédiate plutôt que différée.
+        $userTemp = $env:TEMP
+        $winTemp  = Join-Path $env:WINDIR "Temp"
+        $cleanupCmd = "Remove-Item -Path '$userTemp\*','$winTemp\*' -Recurse -Force -ErrorAction SilentlyContinue"
+        $action = New-ScheduledTaskAction -Execute "powershell.exe" `
+            -Argument "-NoProfile -WindowStyle Hidden -Command `"$cleanupCmd`""
+        $trigger    = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3am
+        $principal  = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+        $settings   = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -StartWhenAvailable
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
+            -Principal $principal -Settings $settings -Description `
+            "Furax Windows 12 Beta : nettoyage hebdomadaire des fichiers temporaires (backlog #84)." `
+            -ErrorAction Stop | Out-Null
+    }
+} catch {
+    # Non-fatal : Register-ScheduledTask peut échouer selon la policy locale (Task
+    # Scheduler désactivé, droits insuffisants) — on n'empêche jamais l'ouverture de
+    # session pour une tâche de nettoyage.
 }
