@@ -117,6 +117,11 @@ if grep -q '^\s*autounattend:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_AUTOUNATTEND=0
 fi
+if grep -q '^\s*first_logon:\s*true' "$PROFILE_FILE"; then
+  FEATURE_FIRST_LOGON=1
+else
+  FEATURE_FIRST_LOGON=0
+fi
 if grep -q '^\s*branding:\s*true' "$PROFILE_FILE"; then
   FEATURE_BRANDING=1
 else
@@ -141,6 +146,7 @@ log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BACKGROUND"
 log_info "Feature autounattend (profil $PROFILE) : $FEATURE_AUTOUNATTEND (comportement réel au boot Setup UNCONFIRMED, voir docs/FEATURES.md #76)"
+log_info "Feature first_logon (profil $PROFILE) : $FEATURE_FIRST_LOGON (exécution réelle au boot UNCONFIRMED)"
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME"
 log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFORMANCE"
@@ -172,6 +178,13 @@ if [[ "$FEATURE_TRIVIAL_MARKER" -eq 1 ]]; then
 else
   log_step "40-customize-minimal : SKIPPED (désactivé par le profil $PROFILE)"
   report_step "40-customize-minimal" "SKIPPED" "désactivé par le profil"
+fi
+
+if [[ "$FEATURE_FIRST_LOGON" -eq 1 ]]; then
+  module_41_first_logon
+else
+  log_step "41-first-logon : SKIPPED (désactivé par le profil $PROFILE)"
+  report_step "41-first-logon" "SKIPPED" "désactivé par le profil"
 fi
 
 if [[ "$FEATURE_BRANDING" -eq 1 ]]; then
