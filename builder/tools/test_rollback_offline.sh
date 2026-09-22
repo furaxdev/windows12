@@ -52,6 +52,7 @@ check "RegisteredOwner absent ou vide par défaut (stock)" $([[ -z "$(hivexget "
 check "OEMInformation absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\OEMInformation' Manufacturer >/dev/null 2>&1; echo $?)
 check "AllowTelemetry absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\DataCollection' AllowTelemetry >/dev/null 2>&1; echo $?)
 check "TurnOffWindowsCopilot absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows\WindowsCopilot' TurnOffWindowsCopilot >/dev/null 2>&1; echo $?)
+check "FuraxWindows12FirstLogon absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon >/dev/null 2>&1; echo $?)
 
 echo ""
 echo "=== 3. Applique le FORWARD (mêmes opérations que 42-branding.sh / 46-theme.sh) ==="
@@ -68,6 +69,7 @@ $SET "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager
 $SET "$NTUSER" 'Software\Microsoft\Clipboard' EnableClipboardHistory dword 1 --create-keys >/dev/null
 $SET "$NTUSER" 'Software\Microsoft\GameBar' AllowAutoGameMode dword 1 --create-keys >/dev/null
 $SET "$NTUSER" 'System\GameConfigStore' GameDVR_Enabled dword 0 --create-keys >/dev/null
+$SET "$SOFTWARE" 'Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon string "powershell.exe -File test.ps1" --create-keys >/dev/null
 
 echo "Vérification post-forward :"
 check "RegisteredOrganization = 'By FuraxDev'" $([[ "$(hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOrganization)" == "By FuraxDev" ]]; echo $?)
@@ -81,6 +83,7 @@ check "SubscribedContent-338388Enabled = 0" $([[ "$(hivexget "$NTUSER" '\Softwar
 check "EnableClipboardHistory = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\Clipboard' EnableClipboardHistory)" == "1" ]]; echo $?)
 check "AllowAutoGameMode = 1" $([[ "$(hivexget "$NTUSER" '\Software\Microsoft\GameBar' AllowAutoGameMode)" == "1" ]]; echo $?)
 check "GameDVR_Enabled = 0" $([[ "$(hivexget "$NTUSER" '\System\GameConfigStore' GameDVR_Enabled)" == "0" ]]; echo $?)
+check "FuraxWindows12FirstLogon écrit" $([[ -n "$(hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon)" ]]; echo $?)
 
 echo ""
 echo "=== 4. Applique le ROLLBACK (inverse) ==="
@@ -97,6 +100,7 @@ $DEL_VAL "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\ContentDeliveryMan
 $DEL_VAL "$NTUSER" 'Software\Microsoft\Clipboard' EnableClipboardHistory >/dev/null
 $DEL_VAL "$NTUSER" 'Software\Microsoft\GameBar' AllowAutoGameMode >/dev/null
 $DEL_VAL "$NTUSER" 'System\GameConfigStore' GameDVR_Enabled >/dev/null
+$DEL_VAL "$SOFTWARE" 'Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon >/dev/null
 
 echo "Vérification post-rollback :"
 check "RegisteredOwner de nouveau absent" $(! hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOwner >/dev/null 2>&1; echo $?)
@@ -112,6 +116,7 @@ check "SubscribedContent-338388Enabled de nouveau absent" $(! hivexget "$NTUSER"
 check "EnableClipboardHistory de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\Clipboard' EnableClipboardHistory >/dev/null 2>&1; echo $?)
 check "AllowAutoGameMode de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\GameBar' AllowAutoGameMode >/dev/null 2>&1; echo $?)
 check "GameDVR_Enabled de nouveau absent" $(! hivexget "$NTUSER" '\System\GameConfigStore' GameDVR_Enabled >/dev/null 2>&1; echo $?)
+check "FuraxWindows12FirstLogon de nouveau absent" $(! hivexget "$SOFTWARE" '\Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstLogon >/dev/null 2>&1; echo $?)
 
 echo ""
 echo "=== Résultat : $PASS PASS / $FAIL FAIL ==="

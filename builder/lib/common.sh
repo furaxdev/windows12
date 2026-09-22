@@ -62,6 +62,7 @@ write_report() {
     echo ""
     echo "--- Fonctionnalités activées / désactivées (profil ${PROFILE:-N/A}) ---"
     echo "trivial_marker (preuve de mécanisme)         : $([[ "${FEATURE_TRIVIAL_MARKER:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
+    echo "first_logon (bienvenue + point restauration) : $([[ "${FEATURE_FIRST_LOGON:-0}" -eq 1 ]] && echo "ACTIVÉ (exécution réelle UNCONFIRMED)" || echo désactivé)"
     echo "branding (\"By FuraxDev\" winver + OEM)         : $([[ "${FEATURE_BRANDING:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
     echo "wallpaper (fond d'écran par défaut)          : $([[ "${FEATURE_WALLPAPER:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"
     echo "installer_background (fond assistant Setup)  : $([[ "${FEATURE_INSTALLER_BACKGROUND:-0}" -eq 1 ]] && echo ACTIVÉ || echo désactivé)"

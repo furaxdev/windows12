@@ -29,6 +29,10 @@ features:
   # builder/modules/43-autounattend.sh. Comportement réel au boot UNCONFIRMED
   # (jamais testé sur un vrai Windows Setup dans cet environnement).
   autounattend: true
+  # Script exécuté UNE SEULE FOIS au tout premier login (RunOnce natif) : point de
+  # restauration système + message de bienvenue. Voir
+  # builder/modules/41-first-logon.sh. Exécution réelle au boot UNCONFIRMED.
+  first_logon: true
   branding: true
   theme: true
   privacy_performance: true

@@ -22,6 +22,10 @@ features:
   # builder/modules/43-autounattend.sh. Comportement réel au boot UNCONFIRMED
   # (jamais testé sur un vrai Windows Setup dans cet environnement).
   autounattend: true
+  # Script exécuté UNE SEULE FOIS au tout premier login (RunOnce natif) : point de
+  # restauration système + message de bienvenue. Voir
+  # builder/modules/41-first-logon.sh. Exécution réelle au boot UNCONFIRMED.
+  first_logon: true
   # "By FuraxDev" dans winver + informations OEM. Voir builder/modules/42-branding.sh.
   branding: true
   # Thème sombre + accent coloré natif. Voir builder/modules/46-theme.sh.

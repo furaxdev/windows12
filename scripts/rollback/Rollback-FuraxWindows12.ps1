@@ -158,6 +158,16 @@ if (Test-Path $desktopShortcut) {
     Write-Skip "Raccourci bureau déjà absent."
 }
 
+# --- 6. Script premier login (RunOnce) : à supprimer seulement s'il n'a pas encore
+# tourné — Windows supprime lui-même l'entrée RunOnce une fois exécutée, donc ce bloc
+# n'a d'effet que si le rollback est lancé AVANT le tout premier login. ---
+Write-Step "Script premier login"
+$runOnceKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
+if (Test-Path $runOnceKey) {
+    Remove-ItemProperty -Path $runOnceKey -Name "FuraxWindows12FirstLogon" -ErrorAction SilentlyContinue
+    Write-Ok "Entrée RunOnce supprimée (si elle était encore présente)."
+}
+
 Write-Host ""
 Write-Host "Rollback terminé. Un redémarrage ou une déconnexion/reconnexion peut être nécessaire" -ForegroundColor Yellow
 Write-Host "pour que l'explorateur/le bureau reflètent immédiatement tous les changements." -ForegroundColor Yellow
