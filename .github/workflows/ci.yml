@@ -1,0 +1,70 @@
+name: CI (lint / syntax)
+
+# Backlog #98 : "Tests automatisés du builder en CI sur une ISO factice". Ce workflow ne
+# fait PAS ça pour l'instant — voir la note honnête dans docs/FEATURES.md #98. Ce qu'il
+# fait réellement : valide la SYNTAXE de tout le code du projet (bash, Python, XML,
+# PowerShell) à chaque push/PR, sans jamais toucher à une vraie ISO Windows (officielle ou
+# non) — aucun téléchargement, aucune extraction, aucun hivex réel. C'est volontairement
+# limité : construire une fausse ISO exploitable par hivex nécessiterait des ruches de
+# registre valides, et il n'existe pas de moyen simple d'en fabriquer une "vide" sans
+# repartir d'une vraie ruche Windows (donc potentiellement du contenu Microsoft) — hors
+# périmètre de ce que ce projet s'autorise à embarquer dans un dépôt public/CI.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bash — vérifie la syntaxe de tous les scripts shell
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r -d '' f; do
+            if ! bash -n "$f"; then
+              echo "::error file=$f::échec de bash -n"
+              fail=1
+            fi
+          done < <(find . -name '*.sh' -not -path './.git/*' -print0)
+          exit "$fail"
+
+      - name: Python — vérifie que tous les outils compilent
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r -d '' f; do
+            if ! python3 -m py_compile "$f"; then
+              echo "::error file=$f::échec de py_compile"
+              fail=1
+            fi
+          done < <(find builder/tools -name '*.py' -print0)
+          exit "$fail"
+
+      - name: XML — vérifie que autounattend.xml est bien formé
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libxml2-utils
+          xmllint --noout assets/unattend/autounattend.xml
+
+      - name: PowerShell — vérifie la syntaxe (parse uniquement, aucune exécution)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $failed = $false
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName, [ref]$null, [ref]$errors
+            )
+            if ($errors.Count -gt 0) {
+              Write-Host "::error file=$($_.FullName)::$($errors.Count) erreur(s) de syntaxe PowerShell"
+              $errors | ForEach-Object { Write-Host "  $_" }
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
