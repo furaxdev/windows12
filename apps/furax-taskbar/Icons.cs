@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -242,5 +243,31 @@ internal static class Icons
         System.Windows.Controls.Canvas.SetTop(dot, size - 3);
         canvas.Children.Add(dot);
         return canvas;
+    }
+
+    /// <summary>Étincelle à 4 branches (approximation générique d'une icône "IA" — pas une
+    /// copie de l'icône Copilot officielle de Microsoft, juste une forme géométrique
+    /// calculée par trigonométrie, sans ambiguïté de tracé). Sommets alternant rayon
+    /// extérieur/intérieur tous les 45°, calculés explicitement — rien deviné à l'œil.</summary>
+    internal static UIElement Copilot(double size = 18)
+    {
+        double cx = size / 2, cy = size / 2;
+        double outerR = size / 2;
+        double innerR = size * 0.16;
+        var points = new PointCollection();
+        for (int i = 0; i < 8; i++)
+        {
+            double angleDeg = i * 45;
+            double r = (i % 2 == 0) ? outerR : innerR;
+            double rad = angleDeg * Math.PI / 180.0;
+            points.Add(new Point(cx + r * Math.Sin(rad), cy - r * Math.Cos(rad)));
+        }
+        var polygon = new Polygon
+        {
+            Points = points,
+            Fill = new LinearGradientBrush(
+                Color.FromRgb(0x60, 0xA5, 0xFA), Color.FromRgb(0xF4, 0x72, 0xB6), 45),
+        };
+        return polygon;
     }
 }

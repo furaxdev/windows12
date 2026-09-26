@@ -31,8 +31,27 @@ public sealed class DockPill : PillWindow
         row.Children.Add(Controls.IconButton(Icons.Browser(), "Navigateur", (_, _) => LaunchByPath("msedge.exe")));
         row.Children.Add(Controls.IconButton(Icons.Store(), "Microsoft Store", (_, _) => LaunchByPath("explorer.exe", "ms-windows-store:")));
 
+        row.Children.Add(Controls.VerticalSeparator());
+
+        row.Children.Add(Controls.IconButton(Icons.Copilot(), "Copilot", (_, _) => LaunchCopilot()));
+
         Content = Controls.PillChrome(row);
     }
+
+    /// <summary>
+    /// Lance le VRAI Copilot Windows natif via son schéma d'URI officiel (ms-copilot:),
+    /// pas une réimplémentation — demande explicite de l'utilisateur (FuraxDev, 26/09/2026)
+    /// : "juste réactiver/exposer Copilot proprement" plutôt que reconstruire une IA.
+    /// ⚠️ Honnêteté : le profil `privacy_performance` de ce projet désactive Copilot par
+    /// défaut (HKLM\...\WindowsCopilot\TurnOffWindowsCopilot=1, voir 47-privacy-
+    /// performance.sh). Sur un build avec ce réglage actif, ce bouton ne lancera rien tant
+    /// que l'utilisateur n'a pas retiré cette policy lui-même (Paramètres, ou en lançant
+    /// scripts/rollback/Rollback-FuraxWindows12.ps1 qui la supprime). On ne contourne PAS
+    /// silencieusement ce réglage depuis l'app — un bouton qui réactiverait une policy
+    /// HKLM à l'insu de l'utilisateur serait exactement le genre de comportement que ce
+    /// projet refuse.
+    /// </summary>
+    private static void LaunchCopilot() => LaunchByPath("explorer.exe", "ms-copilot:");
 
     private static void LaunchByPath(string executable, string? arguments = null)
     {
