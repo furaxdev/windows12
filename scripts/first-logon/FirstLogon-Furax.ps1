@@ -16,9 +16,17 @@
       plus fragile à écrire correctement sans pouvoir tester sur un vrai Windows démarré) —
       HEBDOMADAIRE a été choisi à la place, écart assumé et documenté ici plutôt que
       prétendre "mensuel" sans l'avoir vérifié.
+    - Enregistre une tâche planifiée PERSISTANTE qui réapplique les réglages registre
+      Furax (thème, branding, confidentialité...) à chaque login + une fois par jour.
+      Demande explicite de l'utilisateur (FuraxDev, 25/09/2026) : une mise à jour Windows
+      peut réinitialiser des clés de policy/registre ; plutôt que de laisser l'utilisateur
+      relancer un rollback/reconfiguration à la main, cette tâche rejoue automatiquement
+      scripts/reapply/Reapply-FuraxWindows12.ps1 (voir ce fichier pour le détail des
+      valeurs). Compromis assumé : ce mécanisme peut casser à une future version de
+      Windows et devoir être réécrit — accepté en échange de l'automatisation.
 
     Chaque étape est dans son propre try/catch : un échec de l'une n'empêche pas
-    les autres de s'exécuter, et aucune des trois n'empêche jamais l'ouverture de session.
+    les autres de s'exécuter, et aucune des quatre n'empêche jamais l'ouverture de session.
 #>
 
 try {
@@ -71,4 +79,28 @@ try {
     # Non-fatal : Register-ScheduledTask peut échouer selon la policy locale (Task
     # Scheduler désactivé, droits insuffisants) — on n'empêche jamais l'ouverture de
     # session pour une tâche de nettoyage.
+}
+
+try {
+    $reapplyTaskName = "FuraxWindows12-Reapply"
+    $reapplyScript = "C:\FuraxWindows12\reapply\Reapply-FuraxWindows12.ps1"
+    if ((Test-Path $reapplyScript) -and -not (Get-ScheduledTask -TaskName $reapplyTaskName -ErrorAction SilentlyContinue)) {
+        $reapplyAction = New-ScheduledTaskAction -Execute "powershell.exe" `
+            -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$reapplyScript`""
+        # Deux déclencheurs : à chaque login (rattrape un reset arrivé pendant que la
+        # session était fermée) + une fois par jour (rattrape un reset qui surviendrait
+        # pendant une session déjà ouverte, ex. mise à jour appliquée puis PC laissé allumé).
+        $reapplyTriggerLogon = New-ScheduledTaskTrigger -AtLogOn
+        $reapplyTriggerDaily = New-ScheduledTaskTrigger -Daily -At 4am
+        $reapplyPrincipal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+        $reapplySettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -StartWhenAvailable
+        Register-ScheduledTask -TaskName $reapplyTaskName -Action $reapplyAction `
+            -Trigger @($reapplyTriggerLogon, $reapplyTriggerDaily) -Principal $reapplyPrincipal `
+            -Settings $reapplySettings -Description `
+            "Furax Windows 12 Beta : réapplique les réglages registre Furax (survit aux mises à jour Windows)." `
+            -ErrorAction Stop | Out-Null
+    }
+} catch {
+    # Non-fatal : mêmes raisons que la tâche de nettoyage ci-dessus — jamais bloquant
+    # pour l'ouverture de session.
 }
