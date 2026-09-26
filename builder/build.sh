@@ -153,7 +153,7 @@ log_info "Feature first_logon (profil $PROFILE) : $FEATURE_FIRST_LOGON (exécuti
 log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME (variante : $THEME_VARIANT)"
 log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFORMANCE"
-log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — documentation uniquement, jamais d'exécution auto)"
+log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — application maison compilée au build, opt-in uniquement)"
 
 # --- Pipeline ---
 module_00_validate

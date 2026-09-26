@@ -36,8 +36,8 @@ features:
   # Démarrer désactivées, historique presse-papiers et Mode Jeu activés (profil Default).
   # Voir builder/modules/47-privacy-performance.sh.
   privacy_performance: true
-  # EXPERIMENTAL / UNTESTED — barre des tâches "pilule flottante" via Windhawk.
-  # Désactivé par défaut : dépose uniquement de la documentation, n'installe/n'exécute
-  # RIEN automatiquement. Voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md avant de
-  # l'activer. Ne mets PAS "true" ici sans avoir lu ce README.
+  # EXPERIMENTAL / UNTESTED (rendu visuel) — barre des tâches "pilule flottante" maison
+  # (apps/furax-taskbar/, C#/.NET, PAS de Windhawk/outil tiers). Désactivé par défaut :
+  # compilation+dépôt vérifiés, mais le rendu réel sur un Windows démarré ne l'est pas.
+  # Voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md avant de l'activer.
   taskbar_floating_pill_experimental: false

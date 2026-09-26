@@ -20,3 +20,8 @@ __pycache__/
 *.pyc
 .venv/
 vm/_state/
+
+# .NET (apps/furax-taskbar) — compilé à la volée par 48-taskbar-experimental.sh au build,
+# jamais versionné (161 Mo self-contained, généré depuis les sources .cs commitées)
+apps/*/bin/
+apps/*/obj/
