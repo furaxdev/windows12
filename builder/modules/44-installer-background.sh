@@ -19,6 +19,19 @@
 # binaires du setup (SetupPlatform.exe, SetupHost.exe...) — l'animation de progression,
 # la mise en page des boutons/texte de l'assistant restent celles de Windows stock. Voir
 # docs/FEATURES.md pour le détail de ce qui est CONCEPT ONLY dans ce domaine.
+#
+# Overlay texte "Windows 12" (26/09/2026, demande utilisateur — habillage visuel du
+# Setup) : cuit dans le PNG statique par prepare_installer_background.py, PAS de logo
+# superposé — ⚠️ testé et rejeté : `assets/wallpapers/furax-wave-primary.jpg` a déjà un
+# élément graphique en forme de grille intégré par l'artiste original (voir
+# assets/wallpapers/CREDITS.md), qui se chevauche visuellement avec notre logo
+# (`windows12-logo-fanmade.png`) une fois recadré à la résolution 1024x768 du Setup —
+# constaté en inspectant l'image générée directement (Read tool), pas juste supposé.
+# `--crop-right-frac 0.32` retire aussi ce logo intégré de la SOURCE avant recadrage (sur
+# la copie utilisée pour le Setup uniquement, pas le fond de bureau) — vérifié visuellement
+# que le résultat final ne contient plus aucune trace de cet élément graphique.
+# Police : DejaVu Sans Bold (police libre standard, déjà présente sur la machine de build,
+# cuite dans le PNG — aucune dépendance de police côté Windows cible à l'exécution).
 
 module_44_installer_background() {
   log_step "44-installer-background : fond d'écran de l'assistant Windows Setup (boot.wim)"
@@ -28,9 +41,21 @@ module_44_installer_background() {
   local setup_index=2
   local boot_mount="$WORK_DIR/mount-boot"
 
+  local brand_font=""
+  for candidate in /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf \
+                    /usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf; do
+    if [[ -f "$candidate" ]]; then
+      brand_font="$candidate"
+      break
+    fi
+  done
+  if [[ -z "$brand_font" ]]; then
+    log_warn "Aucune police TTF trouvée pour l'overlay 'Windows 12' — le texte utilisera la police bitmap par défaut de PIL (plus petite/moins nette)."
+  fi
+
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
     log_info "(dry-run) monterait $boot_wim (index $setup_index) sur $boot_mount"
-    log_info "(dry-run) remplacerait sources/background.bmp et Windows/System32/setup.bmp par une version de $bg_src"
+    log_info "(dry-run) remplacerait sources/background.bmp et Windows/System32/setup.bmp par une version de $bg_src + overlay texte \"Windows 12\""
     report_step "44-installer-background" "DRY-RUN"
     return 0
   fi
@@ -84,14 +109,16 @@ module_44_installer_background() {
     fi
 
     local resized="$WORK_DIR/installer-bg-$(basename "$rel").png"
-    if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/prepare_installer_background.py" "$bg_src" "$resized" "$w" "$h" >>"$LOG_FILE" 2>&1; then
+    local overlay_args=(--crop-right-frac 0.32 --text "Windows 12")
+    [[ -n "$brand_font" ]] && overlay_args+=(--font "$brand_font")
+    if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/prepare_installer_background.py" "$bg_src" "$resized" "$w" "$h" "${overlay_args[@]}" >>"$LOG_FILE" 2>&1; then
       log_warn "Échec du redimensionnement pour $rel (voir $LOG_FILE)."
       any_fail=1
       continue
     fi
 
     cp "$resized" "$target"
-    log_info "Remplacé : $rel (${w}x${h})"
+    log_info "Remplacé : $rel (${w}x${h}, overlay \"Windows 12\")"
     any_ok=1
   done
 
