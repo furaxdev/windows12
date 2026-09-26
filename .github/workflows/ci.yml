@@ -68,3 +68,9 @@ jobs:
             }
           }
           if ($failed) { exit 1 }
+
+      - name: .NET — compile apps/furax-taskbar (win-x64, self-contained)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet publish apps/furax-taskbar/FuraxTaskbar.csproj -c Release -r win-x64 --self-contained true
