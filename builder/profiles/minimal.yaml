@@ -41,3 +41,8 @@ features:
   # compilation+dépôt vérifiés, mais le rendu réel sur un Windows démarré ne l'est pas.
   # Voir ui/taskbar/EXPERIMENTAL-floating-pill/README.md avant de l'activer.
   taskbar_floating_pill_experimental: false
+  # EXPERIMENTAL / UNTESTED (rendu visuel) — écran accueil maison avant le vrai Setup
+  # (apps/furax-setup-wizard/, C#/.NET, PAS de patch de bootmgr/winload/setup.exe).
+  # Désactivé par défaut : compilation+dépôt vérifiés, rendu réel au boot non vérifié.
+  # Voir docs/FEATURES.md et builder/modules/44b-setup-wizard.sh avant de l'activer.
+  setup_wizard_experimental: false

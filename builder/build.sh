@@ -145,6 +145,11 @@ if grep -q '^\s*taskbar_floating_pill_experimental:\s*true' "$PROFILE_FILE"; the
 else
   FEATURE_TASKBAR_EXPERIMENTAL=0
 fi
+if grep -q '^\s*setup_wizard_experimental:\s*true' "$PROFILE_FILE"; then
+  FEATURE_SETUP_WIZARD_EXPERIMENTAL=1
+else
+  FEATURE_SETUP_WIZARD_EXPERIMENTAL=0
+fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BACKGROUND"
@@ -154,6 +159,7 @@ log_info "Feature branding (profil $PROFILE) : $FEATURE_BRANDING"
 log_info "Feature theme (profil $PROFILE) : $FEATURE_THEME (variante : $THEME_VARIANT)"
 log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFORMANCE"
 log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — application maison compilée au build, opt-in uniquement)"
+log_info "Feature setup_wizard_experimental (profil $PROFILE) : $FEATURE_SETUP_WIZARD_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — écran d'accueil maison avant le vrai Setup, opt-in uniquement)"
 
 # --- Pipeline ---
 module_00_validate
@@ -171,6 +177,13 @@ if [[ "$FEATURE_INSTALLER_BACKGROUND" -eq 1 ]]; then
 else
   log_step "44-installer-background : SKIPPED (désactivé par le profil $PROFILE)"
   report_step "44-installer-background" "SKIPPED" "désactivé par le profil"
+fi
+
+if [[ "$FEATURE_SETUP_WIZARD_EXPERIMENTAL" -eq 1 ]]; then
+  module_44b_setup_wizard
+else
+  log_step "44b-setup-wizard : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
+  report_step "44b-setup-wizard" "SKIPPED" "expérimental, désactivé par défaut"
 fi
 
 module_20_identify
