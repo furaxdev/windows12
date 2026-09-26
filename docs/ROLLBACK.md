@@ -12,6 +12,7 @@ Ce document concerne le rollback des personnalisations **appliquées par le buil
 | Script PowerShell pour Windows démarré | `IMPLEMENTED` (écrit, miroir exact de la logique testée) / `UNTESTED` en conditions réelles (pas de boot Windows possible dans l'environnement de développement de ce projet) |
 | Restauration du fond d'écran | `IMPLEMENTED` — repose sur la sauvegarde automatique faite par `45-wallpaper.sh` (`img0.jpg.stock-original`) |
 | Raccourci bureau (`Rollback Furax Windows 12.bat`) | `IMPLEMENTED` — déposé par `49-rollback-scripts.sh` sur `Users\Public\Desktop`, présence vérifiée dans le WIM généré, contenu (apostrophes + CRLF) vérifié par extraction directe. Auto-suppression après exécution du rollback. |
+| Tâche de réapplication auto (`FuraxWindows12-Reapply`, backlog #101) | `IMPLEMENTED` (désinscription) — **point critique** : cette tâche planifiée (voir `scripts/reapply/`) réapplique les réglages Furax à chaque login + quotidiennement, pour survivre aux mises à jour Windows. Si le rollback ne la désinscrivait pas, elle annulerait le rollback toute seule au prochain déclenchement. `Rollback-FuraxWindows12.ps1` la désinscrit explicitement (`Unregister-ScheduledTask`) avant de terminer. |
 
 ## Comment ça marche
 

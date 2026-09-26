@@ -12,6 +12,8 @@
     - branding "By FuraxDev" (RegisteredOwner/RegisteredOrganization, OEMInformation)
     - réglages confidentialité/performance (télémétrie, Copilot, updates différés,
       suggestions Menu Démarrer, historique presse-papiers, Mode Jeu, Game Bar)
+    - la tâche planifiée "FuraxWindows12-Reapply" (voir scripts/reapply/), sans quoi elle
+      réappliquerait automatiquement ce que ce script vient d'annuler
 
     Il NE désinstalle PAS Windows, NE touche PAS aux fichiers système autres que ceux
     listés ci-dessus, et est conçu pour être relancé plusieurs fois sans risque
@@ -193,6 +195,20 @@ $runOnceKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
 if (Test-Path $runOnceKey) {
     Remove-ItemProperty -Path $runOnceKey -Name "FuraxWindows12FirstLogon" -ErrorAction SilentlyContinue
     Write-Ok "Entrée RunOnce supprimée (si elle était encore présente)."
+}
+
+# --- 7. Tâche planifiée de réapplication (CRITIQUE) : si on la laisse tourner, elle
+# réécrirait automatiquement TOUTES les clés qu'on vient de supprimer ci-dessus au
+# prochain login ou dans les 24h — annulant ce rollback tout seul. Doit être désinscrite
+# ici, pas laissée en place comme la tâche de nettoyage temp (#84) qui elle est neutre
+# vis-à-vis du rollback. ---
+Write-Step "Tâche de réapplication automatique"
+$reapplyTaskName = "FuraxWindows12-Reapply"
+if (Get-ScheduledTask -TaskName $reapplyTaskName -ErrorAction SilentlyContinue) {
+    Unregister-ScheduledTask -TaskName $reapplyTaskName -Confirm:$false -ErrorAction SilentlyContinue
+    Write-Ok "Tâche '$reapplyTaskName' désinscrite (sinon elle aurait réappliqué ce qu'on vient d'annuler)."
+} else {
+    Write-Skip "Tâche '$reapplyTaskName' déjà absente."
 }
 
 Write-Host ""
