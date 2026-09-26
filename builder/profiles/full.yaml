@@ -29,3 +29,8 @@ features:
   # Reste désactivé même dans le profil "full" : ce n'est pas un tweak natif vérifié,
   # c'est une doc pour une manip manuelle post-installation. Ne pas activer sans lire.
   taskbar_floating_pill_experimental: false
+  # EXPERIMENTAL / UNTESTED (rendu visuel) — écran accueil maison avant le vrai Setup
+  # (apps/furax-setup-wizard/, C#/.NET, PAS de patch de bootmgr/winload/setup.exe).
+  # Désactivé par défaut : compilation+dépôt vérifiés, rendu réel au boot non vérifié.
+  # Voir docs/FEATURES.md et builder/modules/44b-setup-wizard.sh avant de l'activer.
+  setup_wizard_experimental: false
