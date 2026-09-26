@@ -63,6 +63,7 @@ check "FuraxWindows12FirstLogon absent par défaut (stock)" $(! hivexget "$SOFTW
 check "DisableNotifications (Defender) absent par défaut (stock)" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications >/dev/null 2>&1; echo $?)
 check "WSearch Start = 2 par défaut (stock, Automatique)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\WSearch" Start)" == "2" ]]; echo $?)
 check "SysMain Start = 2 par défaut (stock, Automatique)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\SysMain" Start)" == "2" ]]; echo $?)
+check "FuraxWindows12Taskbar (Run) absent par défaut (stock)" $(! hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Run' FuraxWindows12Taskbar >/dev/null 2>&1; echo $?)
 
 echo ""
 echo "=== 3. Applique le FORWARD (mêmes opérations que 42-branding.sh / 46-theme.sh) ==="
@@ -83,6 +84,7 @@ $SET "$SOFTWARE" 'Microsoft\Windows\CurrentVersion\RunOnce' FuraxWindows12FirstL
 $SET "$SOFTWARE" 'Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications dword 1 --create-keys >/dev/null
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\WSearch" Start dword 4 --create-keys >/dev/null
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\SysMain" Start dword 4 --create-keys >/dev/null
+$SET "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\Run' FuraxWindows12Taskbar string 'C:\FuraxWindows12\taskbar\FuraxTaskbar.exe' --create-keys >/dev/null
 
 echo "Vérification post-forward :"
 check "RegisteredOrganization = 'By FuraxDev'" $([[ "$(hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOrganization)" == "By FuraxDev" ]]; echo $?)
@@ -100,6 +102,7 @@ check "FuraxWindows12FirstLogon écrit" $([[ -n "$(hivexget "$SOFTWARE" '\Micros
 check "DisableNotifications (Defender) = 1" $([[ "$(hivexget "$SOFTWARE" '\Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications)" == "1" ]]; echo $?)
 check "WSearch Start = 4 (Désactivé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\WSearch" Start)" == "4" ]]; echo $?)
 check "SysMain Start = 4 (Désactivé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\SysMain" Start)" == "4" ]]; echo $?)
+check "FuraxWindows12Taskbar (Run) écrit" $([[ -n "$(hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Run' FuraxWindows12Taskbar)" ]]; echo $?)
 
 echo ""
 echo "=== 4. Applique le ROLLBACK (inverse) ==="
@@ -122,6 +125,7 @@ $DEL_VAL "$SOFTWARE" 'Policies\Microsoft\Windows Defender Security Center\Notifi
 # Start=2 existe déjà en stock -> le rollback RESTAURE 2, ne supprime pas la valeur.
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\WSearch" Start dword 2 --create-keys >/dev/null
 $SET "$SYSTEM" "${ACTIVE_CS}\\Services\\SysMain" Start dword 2 --create-keys >/dev/null
+$DEL_VAL "$NTUSER" 'Software\Microsoft\Windows\CurrentVersion\Run' FuraxWindows12Taskbar >/dev/null
 
 echo "Vérification post-rollback :"
 check "RegisteredOwner de nouveau absent" $(! hivexget "$SOFTWARE" '\Microsoft\Windows NT\CurrentVersion' RegisteredOwner >/dev/null 2>&1; echo $?)
@@ -141,6 +145,7 @@ check "FuraxWindows12FirstLogon de nouveau absent" $(! hivexget "$SOFTWARE" '\Mi
 check "DisableNotifications (Defender) de nouveau absent" $(! hivexget "$SOFTWARE" '\Policies\Microsoft\Windows Defender Security Center\Notifications' DisableNotifications >/dev/null 2>&1; echo $?)
 check "WSearch Start restauré à 2 (pas supprimé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\WSearch" Start)" == "2" ]]; echo $?)
 check "SysMain Start restauré à 2 (pas supprimé)" $([[ "$(hivexget "$SYSTEM" "\\${ACTIVE_CS}\\Services\\SysMain" Start)" == "2" ]]; echo $?)
+check "FuraxWindows12Taskbar (Run) de nouveau absent" $(! hivexget "$NTUSER" '\Software\Microsoft\Windows\CurrentVersion\Run' FuraxWindows12Taskbar >/dev/null 2>&1; echo $?)
 
 echo ""
 echo "=== Résultat : $PASS PASS / $FAIL FAIL ==="

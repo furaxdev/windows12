@@ -211,6 +211,24 @@ if (Get-ScheduledTask -TaskName $reapplyTaskName -ErrorAction SilentlyContinue) 
     Write-Skip "Tâche '$reapplyTaskName' déjà absente."
 }
 
+# --- 8. Barre des tâches flottante maison (backlog #6/#101, EXPERIMENTAL, opt-in) ---
+Write-Step "Barre des tâches flottante maison"
+$taskbarRunKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+if (Test-Path $taskbarRunKey) {
+    Remove-ItemProperty -Path $taskbarRunKey -Name "FuraxWindows12Taskbar" -ErrorAction SilentlyContinue
+    Write-Ok "Entrée de démarrage automatique supprimée (ne redémarrera plus à la prochaine session)."
+}
+$taskbarProcess = Get-Process -Name "FuraxTaskbar" -ErrorAction SilentlyContinue
+if ($taskbarProcess) {
+    # L'appli restaure elle-même la vraie barre des tâches dans son bloc `finally` en
+    # sortie normale (voir apps/furax-taskbar/Program.cs) — Stop-Process déclenche ce
+    # chemin de sortie, pas un arrêt brutal qui la contournerait.
+    Stop-Process -Name "FuraxTaskbar" -Force -ErrorAction SilentlyContinue
+    Write-Ok "Barre des tâches flottante arrêtée (la vraie barre des tâches Windows revient)."
+} else {
+    Write-Skip "Barre des tâches flottante pas en cours d'exécution."
+}
+
 Write-Host ""
 Write-Host "Rollback terminé. Un redémarrage ou une déconnexion/reconnexion peut être nécessaire" -ForegroundColor Yellow
 Write-Host "pour que l'explorateur/le bureau reflètent immédiatement tous les changements." -ForegroundColor Yellow
