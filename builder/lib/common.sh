@@ -134,6 +134,45 @@ check_disk_space() {
   return 0
 }
 
+# --- Nettoyage des anciennes sorties (backlog #5) --------------------------
+
+# clean_old_outputs <dossier_out>
+# Supprime les ISOs, rapports et logs d'anciens builds dans build/_out, pour éviter
+# l'accumulation disque (ce projet a lui-même buté plusieurs fois sur l'espace disque
+# limité de son environnement de dev à cause de cette accumulation). Ne touche à rien
+# d'autre que les motifs de fichiers connus produits par ce pipeline (voir write_report
+# et cleanup_on_exit) — jamais un rm -rf générique du dossier.
+clean_old_outputs() {
+  local out_dir="$1"
+  if [[ ! -d "$out_dir" ]]; then
+    log_info "Nettoyage anciennes sorties : $out_dir n'existe pas encore, rien à faire."
+    return 0
+  fi
+
+  local patterns=(
+    "*.iso"
+    "*.iso.sha256"
+    "rapport-build-*.txt"
+    "*.rapport.txt"
+    "build-*.log"
+  )
+  local removed=0 f
+  for pattern in "${patterns[@]}"; do
+    for f in "$out_dir"/$pattern; do
+      [[ -e "$f" ]] || continue
+      if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+        log_info "(dry-run) Nettoyage anciennes sorties : supprimerait $f"
+      else
+        log_info "Nettoyage anciennes sorties : suppression de $f"
+        rm -f "$f"
+      fi
+      removed=$((removed + 1))
+    done
+  done
+  log_info "Nettoyage anciennes sorties : $removed fichier(s) $([[ "${DRY_RUN:-0}" -eq 1 ]] && echo "à supprimer (dry-run)" || echo "supprimé(s)") dans $out_dir"
+  return 0
+}
+
 # --- Nettoyage (trap) ------------------------------------------------------
 
 # État global suivi pour le nettoyage de sécurité en cas d'échec.

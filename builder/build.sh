@@ -28,6 +28,7 @@ OUT_DIR="$PROJECT_ROOT/build/_out"
 OUT_ISO=""
 WIM_INDEX=""
 KEEP_WORK=0
+CLEAN_OLD_OUTPUTS=0
 
 usage() {
   cat <<EOF
@@ -42,6 +43,8 @@ Options:
   --work-dir <chemin>   Dossier de travail (défaut : $WORK_ROOT)
   --out <chemin>        Chemin de l'ISO générée (défaut : $OUT_DIR/FuraxWindows12-Beta-x64.iso)
   --keep-work           Ne pas supprimer le dossier de travail après un build réussi
+  --clean-old-outputs   Supprime les anciens ISOs/rapports/logs de build/_out avant de
+                         démarrer ce build (backlog #5, évite l'accumulation disque)
   --dry-run             N'exécute aucune commande destructive/de montage, affiche le plan
   -h, --help            Affiche cette aide
 EOF
@@ -55,6 +58,7 @@ while [[ $# -gt 0 ]]; do
     --work-dir) WORK_ROOT="$2"; shift 2 ;;
     --out) OUT_ISO="$2"; shift 2 ;;
     --keep-work) KEEP_WORK=1; shift ;;
+    --clean-old-outputs) CLEAN_OLD_OUTPUTS=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Option inconnue : $1" >&2; usage; exit 2 ;;
@@ -94,6 +98,11 @@ log_info "Mode           : $([[ "$DRY_RUN" -eq 1 ]] && echo 'DRY-RUN (aucune mod
 log_info "Dossier travail: $WORK_DIR"
 log_info "ISO de sortie  : $OUT_ISO"
 log_info "Fichier de log : $LOG_FILE"
+
+if [[ "$CLEAN_OLD_OUTPUTS" -eq 1 ]]; then
+  log_step "Nettoyage des anciennes sorties (--clean-old-outputs, backlog #5)"
+  clean_old_outputs "$OUT_DIR"
+fi
 
 # Lecture minimale du profil (le format est volontairement simple en Phase 2 — pas de vraie
 # hiérarchie de features à interpréter pour l'instant, voir builder/profiles/*.yaml).

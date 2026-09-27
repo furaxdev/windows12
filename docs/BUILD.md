@@ -116,6 +116,8 @@ Chaque étape écrit dans le rapport de build (`build/_out/rapport-build-<id>.tx
 
 **Nettoyage automatique :** en cas d'erreur à n'importe quelle étape, un `trap` démonte proprement toute image WIM encore montée avant de quitter — aucun mount résiduel ne doit subsister. Le dossier de travail est conservé en cas d'échec (pour inspection), supprimé automatiquement en cas de succès (sauf `--keep-work`).
 
+**Nettoyage des anciennes sorties (backlog #5) :** `build/_out` accumule un ISO/rapport/log par build. Le flag `--clean-old-outputs` supprime, avant de démarrer, tous les `*.iso`, `*.iso.sha256`, `rapport-build-*.txt`, `*.rapport.txt` et `build-*.log` déjà présents dans ce dossier — jamais autre chose. Désactivé par défaut (opt-in) : par défaut aucune ISO existante n'est supprimée sans l'avoir demandé explicitement.
+
 ## 5. Ce qui N'A PAS encore été fait / reste non confirmé
 
 - Personnalisations UI plus profondes (barre des tâches pilule flottante, Menu Démarrer custom, etc. — voir `docs/FEATURES.md`).
