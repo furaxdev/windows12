@@ -160,7 +160,10 @@ def main():
             if args.apply:
                 backup_path = full_path + ".pre-aggressive-patch"
                 if not os.path.exists(backup_path):
-                    shutil.copy2(full_path, backup_path)
+                    # copyfile (pas copy2) : certains systèmes de fichiers montés (FUSE
+                    # wimlib-imagex) ne supportent pas chmod sur les métadonnées, on ne
+                    # copie donc que le contenu, pas les permissions/timestamps.
+                    shutil.copyfile(full_path, backup_path)
                 with open(full_path, "r+b") as fh:
                     fh.write(new_data)
                 entry["backup"] = os.path.relpath(backup_path, root)
