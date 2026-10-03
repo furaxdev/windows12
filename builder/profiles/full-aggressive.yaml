@@ -1,0 +1,32 @@
+# Profil "full-aggressive" — TOUT activé, y compris les fonctionnalités EXPERIMENTAL.
+#
+# Demande explicite de FuraxDev (03/10/2026) : "l'ISO Windows 12 complet". Ce profil
+# combine toutes les personnalisations du profil "full" avec les trois fonctionnalités
+# expérimentales (taskbar flottante maison, écran d'accueil avant Setup, suppression
+# agressive des mentions "Windows 11") — chacune documentée comme EXPERIMENTAL/UNTESTED
+# pour le rendu réel au boot (voir docs/FEATURES.md et docs/AGGRESSIVE_DEBRANDING_LAB.md).
+#
+# ⚠️ Ne PAS utiliser ce profil comme profil par défaut recommandé : il active des
+# fonctionnalités dont les risques (signatures Authenticode invalidées, rendu WPF non
+# confirmé dans WinPE, barre des tâches qui cache la vraie) ont été explicitement acceptés
+# par FuraxDev pour CETTE expérimentation précise, pas comme réglage par défaut du projet.
+
+name: full-aggressive
+
+features:
+  trivial_marker: true
+  wallpaper: true
+  installer_background: true
+  autounattend: true
+  first_logon: true
+  branding: true
+  theme: true
+  theme_variant: dark
+  privacy_performance: true
+  # EXPERIMENTAL/UNTESTED — activé ici à la demande explicite de FuraxDev pour ce build.
+  taskbar_floating_pill_experimental: true
+  # EXPERIMENTAL/UNTESTED — activé ici à la demande explicite de FuraxDev pour ce build.
+  setup_wizard_experimental: true
+  # EXPERIMENTAL — activé ici à la demande explicite de FuraxDev pour ce build, risques
+  # assumés (voir docs/AGGRESSIVE_DEBRANDING_LAB.md).
+  debrand_aggressive: true
