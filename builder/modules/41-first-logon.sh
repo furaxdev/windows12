@@ -74,7 +74,7 @@ module_41_first_logon() {
   fi
 
   local runonce_cmd='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\FuraxWindows12\first-logon\FirstLogon-Furax.ps1"'
-  if /usr/bin/python3.12 "$BUILDER_DIR/tools/hivex_set_value.py" "$software_hive" \
+  if ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/hivex_set_value.py" "$software_hive" \
       'Microsoft\Windows\CurrentVersion\RunOnce' "FuraxWindows12FirstLogon" "string" "$runonce_cmd" \
       --create-keys >>"$LOG_FILE" 2>&1; then
     log_info "Entrée RunOnce écrite : s'exécutera au tout premier login (point de restauration + message de bienvenue), puis se supprime automatiquement (comportement natif Windows)."

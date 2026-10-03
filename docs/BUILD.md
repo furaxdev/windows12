@@ -34,13 +34,17 @@ sudo apt-get install -y \
 | `hivex` (`libhivex-bin`, `python3-hivex`) | éditer le registre Windows offline, sans DISM |
 | `qemu-system-x86_64`, `qemu-img`, `ovmf` | démarrer l'ISO générée dans une VM de test UEFI |
 
-**⚠️ Piège spécifique à cet environnement de dev (à vérifier chez toi aussi) :** si plusieurs versions de Python sont installées et qu'un `python3` "par défaut" ne correspond pas à la version pour laquelle `python3-hivex` a été compilé (ex. `python3` pointe vers 3.11 alors que le paquet Ubuntu fournit le binding pour 3.12), l'import du module `hivex` échoue avec `ModuleNotFoundError`. Vérifie avec :
+**⚠️ Piège récurrent (rencontré sur plusieurs machines différentes, pas que dans cet environnement de dev) :** le binding Python du module `hivex` (`libhivexmod.cpython-XXX-...so`) est lié à l'ABI d'une version Python précise, et ce n'est pas toujours la même selon la distribution — parfois `python3.12`, parfois le `python3` "par défaut" (3.13, 3.14...), parfois une troisième version. Si le mauvais interpréteur est appelé, l'import du module `hivex` échoue avec `ModuleNotFoundError: No module named 'libhivexmod'`.
+
+Le pipeline (`builder/modules/00-validate.sh`) **détecte automatiquement** le bon interpréteur au lancement (il teste `python3.12`, `python3`, `python3.13`, `python3.11` dans cet ordre et retient le premier où `import hivex` fonctionne, dans la variable `$HIVEX_PYTHON` utilisée par tous les modules) — plus besoin de l'adapter à la main. Pour vérifier toi-même lequel est le bon sur ta machine :
 
 ```bash
-python3 -c "import hivex" || python3.12 -c "import hivex"
+for p in python3.12 python3 python3.13 python3.11; do
+  command -v "$p" >/dev/null && "$p" -c "import hivex" 2>/dev/null && echo "OK: $p" 
+done
 ```
 
-Le pipeline (`builder/tools/hivex_set_value.py`) appelle explicitement `/usr/bin/python3.12` pour éviter ce piège — adapte ce chemin si ta distribution utilise une autre version par défaut.
+Si aucun n'affiche "OK", le module `python3-hivex` installé via apt ne correspond à aucun interpréteur présent sur ta machine — vérifie `dpkg -L python3-hivex | grep libhivexmod` pour voir quelle version ABI il cible.
 
 **KVM / virtualisation imbriquée :** dans un conteneur ou une VM sans virtualisation imbriquée activée, `/dev/kvm` peut être absent ou non fonctionnel (`kvm-ok` répond "Your CPU does not support KVM extensions"). `vm/test-vm.sh` bascule alors automatiquement sur l'accélération logicielle TCG — fonctionnel mais nettement plus lent qu'avec KVM.
 

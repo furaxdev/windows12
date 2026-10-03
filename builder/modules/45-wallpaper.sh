@@ -46,7 +46,7 @@ module_45_wallpaper() {
   # Dimensions cibles = celles du fond d'écran stock, pour rester cohérent avec ce que
   # Windows attend à cet emplacement (évite un fichier surdimensionné ou sous-dimensionné).
   local dims
-  dims=$(/usr/bin/python3.12 -c "from PIL import Image; im = Image.open('$target'); print(f'{im.size[0]} {im.size[1]}')" 2>>"$LOG_FILE")
+  dims=$(${HIVEX_PYTHON:-/usr/bin/python3.12} -c "from PIL import Image; im = Image.open('$target'); print(f'{im.size[0]} {im.size[1]}')" 2>>"$LOG_FILE")
   if [[ -z "$dims" ]]; then
     log_error "Impossible de lire les dimensions de $target (Pillow manquant ? voir python3-pil)."
     report_step "45-wallpaper" "FAILED" "lecture dimensions impossible"
@@ -67,7 +67,7 @@ module_45_wallpaper() {
   # (constaté visuellement lors du développement de ce module, corrigé). Le logo reste un
   # asset disponible pour un usage futur différent (ex. icône, écran de démarrage).
   local resized="$WORK_DIR/wallpaper-resized.jpg"
-  if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/prepare_wallpaper.py" "$wallpaper_src" "$resized" "$target_w" "$target_h" >>"$LOG_FILE" 2>&1; then
+  if ! ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/prepare_wallpaper.py" "$wallpaper_src" "$resized" "$target_w" "$target_h" >>"$LOG_FILE" 2>&1; then
     log_error "Échec du redimensionnement du fond d'écran (voir $LOG_FILE)."
     report_step "45-wallpaper" "FAILED" "redimensionnement échoué"
     return 1
@@ -89,9 +89,9 @@ module_45_wallpaper() {
 
   local win_path='C:\Windows\Web\Wallpaper\Windows\img0.jpg'
   local reg_ok=1
-  /usr/bin/python3.12 "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" "Control Panel\\Desktop" "WallPaper" "string" "$win_path" >>"$LOG_FILE" 2>&1 || reg_ok=0
-  /usr/bin/python3.12 "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" "Control Panel\\Desktop" "WallpaperStyle" "string" "10" >>"$LOG_FILE" 2>&1 || reg_ok=0
-  /usr/bin/python3.12 "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" "Control Panel\\Desktop" "TileWallpaper" "string" "0" >>"$LOG_FILE" 2>&1 || reg_ok=0
+  ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" "Control Panel\\Desktop" "WallPaper" "string" "$win_path" >>"$LOG_FILE" 2>&1 || reg_ok=0
+  ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" "Control Panel\\Desktop" "WallpaperStyle" "string" "10" >>"$LOG_FILE" 2>&1 || reg_ok=0
+  ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" "Control Panel\\Desktop" "TileWallpaper" "string" "0" >>"$LOG_FILE" 2>&1 || reg_ok=0
 
   if [[ "$reg_ok" -eq 1 ]]; then
     log_info "Profil par défaut configuré : nouveau fond d'écran en mode Remplir (WallpaperStyle=10, TileWallpaper=0)."

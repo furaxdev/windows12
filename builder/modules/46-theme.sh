@@ -76,7 +76,7 @@ module_46_theme() {
   fi
 
   local ok=1
-  local set_val="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_set_value.py"
+  local set_val="${HIVEX_PYTHON:-/usr/bin/python3.12} $BUILDER_DIR/tools/hivex_set_value.py"
 
   $set_val "$ntuser_hive" 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' "AppsUseLightTheme" "dword" "$light_flag" \
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0

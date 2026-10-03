@@ -25,13 +25,28 @@ module_00_validate() {
   require_tool bsdtar libarchive-tools || tool_fail=1
   require_tool qemu-system-x86_64 qemu-system-x86 || tool_fail=1
   require_tool qemu-img qemu-utils || tool_fail=1
-  if [[ ! -x /usr/bin/python3.12 ]] || ! /usr/bin/python3.12 -c "import hivex" >/dev/null 2>&1; then
-    log_warn "python3.12 + module hivex indisponible — l'édition de registre offline (module 40) sera SKIPPED, pas simulée."
+  # Le binding Python du module hivex est lié à l'ABI d'une version Python précise
+  # (ex. libhivexmod.cpython-314-x86_64-linux-gnu.so) — selon la distribution, c'est parfois
+  # python3.12, parfois le python3 "par défaut" (3.13, 3.14, ...), parfois les deux à la
+  # fois mais pas pour le même binding. Fixer "python3.12" en dur (comme avant) casse sur
+  # toute machine où ce n'est pas le bon alignement — constaté réellement le 03/10/2026 sur
+  # une machine où c'est python3 (3.14) qui a le binding, pas python3.12 (présent mais sans
+  # module). On teste donc plusieurs candidats et on retient le premier qui fonctionne.
+  HIVEX_PYTHON=""
+  for _candidate in /usr/bin/python3.12 /usr/bin/python3 python3.13 python3.12 python3.11 python3; do
+    if command -v "$_candidate" >/dev/null 2>&1 && "$_candidate" -c "import hivex" >/dev/null 2>&1; then
+      HIVEX_PYTHON="$(command -v "$_candidate")"
+      break
+    fi
+  done
+  if [[ -z "$HIVEX_PYTHON" ]]; then
+    log_warn "Aucun interpréteur Python avec le module hivex importable trouvé (testé : python3.12, python3, python3.13, python3.11) — l'édition de registre offline (module 40 et suivants) sera SKIPPED, pas simulée."
     HIVEX_AVAILABLE=0
   else
-    log_info "hivex disponible via /usr/bin/python3.12"
+    log_info "hivex disponible via $HIVEX_PYTHON"
     HIVEX_AVAILABLE=1
   fi
+  export HIVEX_PYTHON
   if [[ $tool_fail -ne 0 ]]; then
     report_step "00-validate" "FAILED" "outil(s) manquant(s)"
     return 1

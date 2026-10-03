@@ -95,7 +95,7 @@ module_44_installer_background() {
     fi
 
     local dims
-    dims=$(/usr/bin/python3.12 -c "from PIL import Image; im = Image.open('$target'); print(f'{im.size[0]} {im.size[1]}')" 2>>"$LOG_FILE")
+    dims=$(${HIVEX_PYTHON:-/usr/bin/python3.12} -c "from PIL import Image; im = Image.open('$target'); print(f'{im.size[0]} {im.size[1]}')" 2>>"$LOG_FILE")
     if [[ -z "$dims" ]]; then
       log_warn "Impossible de lire les dimensions de $rel — cible ignorée."
       any_fail=1
@@ -111,7 +111,7 @@ module_44_installer_background() {
     local resized="$WORK_DIR/installer-bg-$(basename "$rel").png"
     local overlay_args=(--crop-right-frac 0.32 --text "Windows 12")
     [[ -n "$brand_font" ]] && overlay_args+=(--font "$brand_font")
-    if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/prepare_installer_background.py" "$bg_src" "$resized" "$w" "$h" "${overlay_args[@]}" >>"$LOG_FILE" 2>&1; then
+    if ! ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/prepare_installer_background.py" "$bg_src" "$resized" "$w" "$h" "${overlay_args[@]}" >>"$LOG_FILE" 2>&1; then
       log_warn "Échec du redimensionnement pour $rel (voir $LOG_FILE)."
       any_fail=1
       continue

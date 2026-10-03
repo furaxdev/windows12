@@ -50,7 +50,7 @@ module_48c_aggressive_debrand() {
   local patch_report="$WORK_DIR/debrand-patch-report.txt"
 
   log_info "Scan de \$MOUNT_DIR (peut prendre plusieurs minutes, ~140k fichiers sur une image complète)..."
-  if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/winstring_scan.py" "$MOUNT_DIR" \
+  if ! ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/winstring_scan.py" "$MOUNT_DIR" \
        --out "$inv" --report "$scan_report" >>"$LOG_FILE" 2>&1; then
     log_error "Échec du scan winstring_scan.py (voir $LOG_FILE)."
     report_step "48c-aggressive-debrand" "FAILED" "scan échoué"
@@ -59,7 +59,7 @@ module_48c_aggressive_debrand() {
   cat "$scan_report" >>"$LOG_FILE"
 
   log_info "Application du patch (longueur égale, registre et chaîne de boot exclus, --no-backup : rollback = ISO source)..."
-  if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/winstring_patch.py" "$inv" "$MOUNT_DIR" \
+  if ! ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/winstring_patch.py" "$inv" "$MOUNT_DIR" \
        --log "$patch_log" --report "$patch_report" --apply --no-backup >>"$LOG_FILE" 2>&1; then
     log_error "Échec du patch winstring_patch.py (voir $LOG_FILE)."
     report_step "48c-aggressive-debrand" "FAILED" "patch échoué"

@@ -96,7 +96,7 @@ module_48_taskbar_experimental() {
     return 0
   fi
 
-  if /usr/bin/python3.12 "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" \
+  if ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/hivex_set_value.py" "$ntuser_hive" \
       'Software\Microsoft\Windows\CurrentVersion\Run' "FuraxWindows12Taskbar" "string" \
       'C:\FuraxWindows12\taskbar\FuraxTaskbar.exe' --create-keys >>"$LOG_FILE" 2>&1; then
     log_info "Entrée Run écrite : la barre flottante démarrera automatiquement à l'ouverture de session pour tout nouveau compte."

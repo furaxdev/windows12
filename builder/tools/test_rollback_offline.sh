@@ -49,9 +49,26 @@ ACTIVE_CS_NUM=$(hivexget "$SYSTEM" '\Select' Default)
 ACTIVE_CS=$(printf "ControlSet%03d" "$ACTIVE_CS_NUM")
 echo "ControlSet actif détecté : $ACTIVE_CS (Select\\Default=$ACTIVE_CS_NUM)"
 
-SET="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_set_value.py"
-DEL_VAL="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_delete_value.py"
-DEL_KEY="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_delete_key.py"
+# Script autonome (ne source pas builder/lib/common.sh) : détection du bon interpréteur
+# Python refaite ici à l'identique de builder/modules/00-validate.sh — voir ce fichier pour
+# l'explication du piège (le binding hivex est lié à l'ABI d'une version Python précise,
+# qui varie selon la machine : parfois python3.12, parfois le python3 par défaut).
+HIVEX_PYTHON=""
+for _candidate in /usr/bin/python3.12 /usr/bin/python3 python3.13 python3.12 python3.11 python3; do
+  if command -v "$_candidate" >/dev/null 2>&1 && "$_candidate" -c "import hivex" >/dev/null 2>&1; then
+    HIVEX_PYTHON="$(command -v "$_candidate")"
+    break
+  fi
+done
+if [[ -z "$HIVEX_PYTHON" ]]; then
+  echo "Erreur : aucun interpréteur Python avec le module hivex importable trouvé." >&2
+  exit 1
+fi
+echo "Interpréteur Python (hivex) : $HIVEX_PYTHON"
+
+SET="$HIVEX_PYTHON $BUILDER_DIR/tools/hivex_set_value.py"
+DEL_VAL="$HIVEX_PYTHON $BUILDER_DIR/tools/hivex_delete_value.py"
+DEL_KEY="$HIVEX_PYTHON $BUILDER_DIR/tools/hivex_delete_key.py"
 
 echo ""
 echo "=== 2. Confirme l'état STOCK (avant toute modification) ==="

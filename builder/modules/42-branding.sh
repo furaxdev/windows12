@@ -45,7 +45,7 @@ module_42_branding() {
   fi
 
   local ok=1
-  local set_val="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_set_value.py"
+  local set_val="${HIVEX_PYTHON:-/usr/bin/python3.12} $BUILDER_DIR/tools/hivex_set_value.py"
 
   $set_val "$software_hive" 'Microsoft\Windows NT\CurrentVersion' "RegisteredOwner" "string" "Furax" \
     --create-keys >>"$LOG_FILE" 2>&1 || ok=0

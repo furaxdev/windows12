@@ -69,7 +69,7 @@ module_47_privacy_performance() {
     return 0
   fi
 
-  local set_val="/usr/bin/python3.12 $BUILDER_DIR/tools/hivex_set_value.py"
+  local set_val="${HIVEX_PYTHON:-/usr/bin/python3.12} $BUILDER_DIR/tools/hivex_set_value.py"
   local ok=1
   local any=0
 

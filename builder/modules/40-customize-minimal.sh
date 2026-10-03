@@ -47,7 +47,7 @@ module_40_customize_minimal() {
   fi
 
   log_info "Écriture d'une valeur de test dans la ruche SOFTWARE via hivex..."
-  if /usr/bin/python3.12 "$BUILDER_DIR/tools/hivex_set_value.py" \
+  if ${HIVEX_PYTHON:-/usr/bin/python3.12} "$BUILDER_DIR/tools/hivex_set_value.py" \
       "$software_hive" "Microsoft" "FuraxWindows12Beta" "string" "phase2-proof-of-mechanism" \
       >>"$LOG_FILE" 2>&1; then
     log_info "Valeur de registre écrite avec succès (HKLM\\SOFTWARE\\Microsoft\\FuraxWindows12Beta)."
