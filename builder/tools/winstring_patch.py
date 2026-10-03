@@ -97,6 +97,11 @@ def main():
     ap.add_argument("--apply", action="store_true", help="applique réellement (sinon dry-run)")
     ap.add_argument("--categories", nargs="*", default=["pe", "mui", "text", "other"],
                      help="catégories à patcher (registry toujours exclu, voir docstring)")
+    ap.add_argument("--no-backup", action="store_true",
+                     help="ne crée pas de copie .pre-aggressive-patch par fichier. À utiliser "
+                          "uniquement quand un autre mécanisme de rollback existe déjà (ex. dans "
+                          "le pipeline build.sh, l'ISO source non modifiée EST le rollback) — "
+                          "évite de doubler transitoirement l'usage disque des fichiers patchés.")
     args = ap.parse_args()
 
     root = os.path.abspath(args.root)
@@ -158,15 +163,16 @@ def main():
             }
 
             if args.apply:
-                backup_path = full_path + ".pre-aggressive-patch"
-                if not os.path.exists(backup_path):
-                    # copyfile (pas copy2) : certains systèmes de fichiers montés (FUSE
-                    # wimlib-imagex) ne supportent pas chmod sur les métadonnées, on ne
-                    # copie donc que le contenu, pas les permissions/timestamps.
-                    shutil.copyfile(full_path, backup_path)
+                if not args.no_backup:
+                    backup_path = full_path + ".pre-aggressive-patch"
+                    if not os.path.exists(backup_path):
+                        # copyfile (pas copy2) : certains systèmes de fichiers montés (FUSE
+                        # wimlib-imagex) ne supportent pas chmod sur les métadonnées, on ne
+                        # copie donc que le contenu, pas les permissions/timestamps.
+                        shutil.copyfile(full_path, backup_path)
+                    entry["backup"] = os.path.relpath(backup_path, root)
                 with open(full_path, "r+b") as fh:
                     fh.write(new_data)
-                entry["backup"] = os.path.relpath(backup_path, root)
 
             patched.append(entry)
             logf.write(json.dumps(entry, ensure_ascii=False) + "\n")

@@ -1,0 +1,167 @@
+name: Build complet ISO (self-hosted uniquement)
+
+# Demande explicite de FuraxDev (03/10/2026) : déporter le build lourd (extraction,
+# debranding, personnalisation WIM, assemblage ISO) hors du sandbox de dev, pour éviter
+# les ~20+ minutes et les limites d'espace disque rencontrées là-bas.
+#
+# ⚠️ NE PEUT PAS tourner sur un runner GitHub-hosted (ubuntu-latest, etc.) : ce build a
+# besoin d'une vraie ISO Windows 11 officielle en entrée (plusieurs Go, contenu Microsoft
+# sous licence). L'uploader vers l'infrastructure GitHub (push Git — limite 100 Mo/fichier
+# sans LFS, 2 Go avec LFS, largement dépassée par une ISO de ~8 Go — ou upload d'artifact)
+# dépasserait les quotas GitHub ET redistribuerait du contenu Microsoft sous licence vers
+# un tiers, ce que ce projet s'interdit depuis le début (voir docs/FEATURES.md, règles du
+# projet). Ce workflow suppose donc un RUNNER SELF-HOSTED (machine que FuraxDev contrôle),
+# avec sa propre ISO Windows 11 déjà présente localement sur cette machine — jamais
+# uploadée vers GitHub. GitHub Actions orchestre et journalise l'exécution, mais l'ISO et
+# le WIM ne quittent jamais la machine du runner. Seuls des fichiers texte (rapport, log,
+# SHA-256) sont remontés comme artifacts GitHub.
+#
+# Prérequis sur le runner self-hosted (à installer une fois, voir docs/BUILD.md) :
+#   wimlib-imagex (wimtools), xorriso, 7z (p7zip-full), bsdtar (libarchive-tools),
+#   qemu-system-x86_64 + qemu-img (qemu-system-x86 + qemu-utils), python3.12 + module hivex,
+#   .NET 8 SDK (pour apps/furax-taskbar et apps/furax-setup-wizard), exécution en root
+#   (montage WIM + édition de registre offline le nécessitent).
+#
+# Pour enregistrer le runner : Settings > Actions > Runners > New self-hosted runner sur ce
+# dépôt, avec le label "furax-windows12-builder" (voir `runs-on` ci-dessous) — labellisé
+# explicitement pour ne jamais matcher un self-hosted runner générique sans ces outils.
+
+on:
+  workflow_dispatch:
+    inputs:
+      iso_path:
+        description: "Chemin ABSOLU de l'ISO Windows 11 source, déjà présent sur le runner (jamais uploadé)"
+        required: true
+        type: string
+      profile:
+        description: "Profil de build (voir builder/profiles/*.yaml)"
+        required: false
+        default: "full-aggressive"
+        type: string
+      out_name:
+        description: "Nom du fichier ISO de sortie"
+        required: false
+        default: "FuraxWindows12-Beta-x64-COMPLETE.iso"
+        type: string
+      clean_old_outputs:
+        description: "Nettoyer les anciens ISOs/rapports/logs de build/_out avant de démarrer"
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  # Un seul build lourd à la fois sur ce runner — évite deux builds simultanés qui
+  # se battraient pour le même espace disque limité.
+  group: furax-full-iso-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: [self-hosted, furax-windows12-builder]
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Vérifie les outils requis sur le runner
+        run: |
+          set -euo pipefail
+          fail=0
+          for t in wimlib-imagex xorriso 7z bsdtar qemu-system-x86_64 qemu-img; do
+            if ! command -v "$t" >/dev/null 2>&1; then
+              echo "::error::Outil manquant sur ce runner self-hosted : $t"
+              fail=1
+            else
+              echo "OK: $t -> $(command -v "$t")"
+            fi
+          done
+          if ! /usr/bin/python3.12 -c "import hivex" >/dev/null 2>&1; then
+            echo "::warning::module Python hivex indisponible — l'édition de registre offline sera SKIPPED par le pipeline, pas une erreur bloquante ici mais la personnalisation sera incomplète."
+          fi
+          if ! command -v dotnet >/dev/null 2>&1 && [[ ! -x /opt/dotnet/dotnet ]]; then
+            echo "::warning::.NET SDK introuvable — les apps taskbar/setup-wizard seront SKIPPED (pas bloquant, pipeline gère déjà ce cas)."
+          fi
+          exit "$fail"
+
+      - name: Vérifie que l'ISO d'entrée existe sur le runner
+        run: |
+          set -euo pipefail
+          if [[ ! -f "${{ inputs.iso_path }}" ]]; then
+            echo "::error::ISO introuvable sur ce runner : ${{ inputs.iso_path }} — ce workflow ne télécharge/n'uploade JAMAIS d'ISO Windows, elle doit déjà être présente localement sur la machine du runner."
+            exit 1
+          fi
+          echo "ISO trouvée : ${{ inputs.iso_path }} ($(du -h "${{ inputs.iso_path }}" | cut -f1))"
+
+      - name: Vérifie l'espace disque disponible
+        run: |
+          set -euo pipefail
+          iso_bytes=$(stat -c '%s' "${{ inputs.iso_path }}")
+          # Même règle que builder/modules/00-validate.sh (2.5x la taille de l'ISO source).
+          min_required=$(( iso_bytes * 5 / 2 ))
+          avail_bytes=$(df --output=avail -B1 "$PWD" | tail -n1 | tr -d ' ')
+          echo "Espace disponible : $((avail_bytes / 1024 / 1024)) Mo — requis (estimation) : $((min_required / 1024 / 1024)) Mo"
+          if (( avail_bytes < min_required )); then
+            echo "::error::Espace disque insuffisant sur ce runner pour ce build (voir calcul ci-dessus). Libère de l'espace avant de relancer."
+            exit 1
+          fi
+
+      - name: Nettoyage des anciennes sorties (si demandé)
+        if: ${{ inputs.clean_old_outputs }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/_out
+          sudo rm -f build/_out/*.iso build/_out/*.iso.sha256 build/_out/rapport-build-*.txt \
+                      build/_out/*.rapport.txt build/_out/build-*.log 2>/dev/null || true
+          echo "Anciennes sorties nettoyées (si elles existaient)."
+
+      - name: Lance le build complet (builder/build.sh)
+        env:
+          DOTNET_ROOT: /opt/dotnet
+        run: |
+          set -euo pipefail
+          export PATH="/opt/dotnet:$PATH"
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          echo "::group::Build en cours (profil=${{ inputs.profile }})"
+          sudo -E ./builder/build.sh \
+            --iso "${{ inputs.iso_path }}" \
+            --profile "${{ inputs.profile }}" \
+            --out "build/_out/${{ inputs.out_name }}"
+          echo "::endgroup::"
+
+      # Le nettoyage de l'arborescence extraite ($EXTRACT_DIR) entre les grosses étapes est
+      # désormais fait automatiquement PAR build.sh lui-même (voir le commit qui a ajouté
+      # cette étape), pas besoin de le refaire ici — bénéfice valable aussi en sandbox local.
+
+      - name: Résumé du build
+        if: always()
+        run: |
+          {
+            echo "## Build Furax Windows 12 — résumé"
+            echo ""
+            echo "- Profil : \`${{ inputs.profile }}\`"
+            echo "- ISO source (runner, jamais uploadée) : \`${{ inputs.iso_path }}\`"
+            if [[ -f "build/_out/${{ inputs.out_name }}" ]]; then
+              size_mo=$(( $(stat -c '%s' "build/_out/${{ inputs.out_name }}") / 1024 / 1024 ))
+              sha=$(sha256sum "build/_out/${{ inputs.out_name }}" | awk '{print $1}')
+              echo "- ISO générée : \`build/_out/${{ inputs.out_name }}\` (${size_mo} Mo), reste sur ce runner (jamais uploadée vers GitHub)"
+              echo "- SHA-256 : \`$sha\`"
+              echo "$sha  ${{ inputs.out_name }}" > "build/_out/${{ inputs.out_name }}.sha256"
+            else
+              echo "- ⚠️ Aucune ISO générée (build échoué ou interrompu, voir les logs ci-dessus)."
+            fi
+            echo ""
+            echo "Rapport complet et log détaillé : voir les artifacts de ce run (texte seulement, jamais l'ISO/WIM)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload des rapports/logs (texte uniquement — jamais l'ISO/WIM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: furax-build-reports-${{ github.run_id }}
+          path: |
+            build/_out/rapport-build-*.txt
+            build/_out/*.rapport.txt
+            build/_out/build-*.log
+            build/_out/${{ inputs.out_name }}.sha256
+          if-no-files-found: warn
+          retention-days: 30

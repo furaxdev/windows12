@@ -128,3 +128,46 @@ Chaque étape écrit dans le rapport de build (`build/_out/rapport-build-<id>.tx
 ## 6. Diagnostiquer un échec
 
 Voir `docs/TROUBLESHOOTING.md`.
+
+## 7. Lancer le build complet via GitHub Actions (self-hosted)
+
+Demande explicite de FuraxDev (03/10/2026) : déporter le build lourd (extraction,
+personnalisation, debranding, assemblage ISO) hors d'un sandbox de développement limité en
+espace disque, vers une vraie machine, orchestrée par GitHub Actions.
+
+**Pourquoi un runner self-hosted, et pas un runner GitHub-hosted classique :** ce build a
+besoin d'une vraie ISO Windows 11 officielle en entrée (plusieurs Go, contenu Microsoft sous
+licence). La pousser vers l'infrastructure GitHub (dépasse largement les limites de taille
+de fichier Git/Git LFS) ou l'uploader comme artifact CI redistribuerait du contenu Microsoft
+sous licence vers un tiers — ce que ce projet s'interdit depuis le début. Le workflow
+`.github/workflows/build-full-iso.yml` suppose donc un **runner self-hosted** (une machine
+que tu contrôles toi-même), avec ta propre ISO Windows 11 déjà présente localement — elle ne
+quitte jamais ta machine. Seuls des fichiers texte (rapport, log, SHA-256) remontent comme
+artifacts GitHub ; jamais l'ISO ni le WIM.
+
+### 7.1 Enregistrer le runner (une seule fois)
+
+1. Sur GitHub : Settings du dépôt > Actions > Runners > "New self-hosted runner".
+2. Suis les instructions d'installation données par GitHub pour ta machine (Linux x64 dans
+   la plupart des cas).
+3. Donne-lui le label `furax-windows12-builder` lors de l'enregistrement (ou ajoute-le après
+   coup) — le workflow cible spécifiquement ce label pour ne jamais tourner sur un runner
+   self-hosted générique qui n'aurait pas les bons outils installés.
+4. Installe sur cette machine les mêmes dépendances que listées en section 1.2 de ce
+   document (`wimlib-imagex`, `xorriso`, `7z`, `bsdtar`, `qemu-system-x86_64`/`qemu-img`,
+   `python3.12` + module `hivex`, .NET 8 SDK). Le runner doit pouvoir s'exécuter avec les
+   privilèges root nécessaires au montage WIM/édition de registre offline (le workflow
+   utilise `sudo` pour l'étape de build).
+
+### 7.2 Lancer un build
+
+Dans l'onglet "Actions" du dépôt GitHub, workflow "Build complet ISO (self-hosted
+uniquement)" > "Run workflow", en renseignant :
+- `iso_path` : chemin absolu de ton ISO Windows 11 sur la machine du runner (obligatoire).
+- `profile` : profil de build (défaut `full-aggressive` — voir `builder/profiles/`).
+- `out_name` : nom du fichier ISO de sortie.
+- `clean_old_outputs` : coche pour nettoyer les anciennes sorties avant de démarrer.
+
+L'ISO finale reste sur la machine du runner, dans `build/_out/`. Le résumé du run GitHub
+Actions affiche sa taille et son SHA-256 ; les artifacts téléchargeables (rapport, log,
+fichier `.sha256`) sont du texte uniquement.

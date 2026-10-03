@@ -265,8 +265,33 @@ fi
 module_49_rollback_scripts
 
 module_50_unmount
+
+# Deuxième vérification d'espace disque juste avant l'étape la plus lourde (écriture de
+# l'ISO finale, ~= taille de l'ISO source). La vérification du module 00 porte sur l'espace
+# disponible AU DÉBUT du build — insuffisant si des étapes intermédiaires (ex. 48c, qui
+# traite des centaines de fichiers en place) ont fait varier l'usage disque entre-temps
+# (constaté réellement le 03/10/2026 : échec xorriso par manque d'espace malgré une
+# vérification initiale qui semblait large). On re-vérifie ici avec la taille réelle de
+# l'ISO source déjà connue (ISO_SHA256/ISO_PATH disponibles depuis le module 00).
+if [[ "${DRY_RUN:-0}" -eq 0 ]]; then
+  _iso_size_for_check=$(stat -c '%s' "$ISO_PATH")
+  log_info "Vérification d'espace disque avant 60-build-iso (besoin estimé : ~1x taille ISO source + marge)..."
+  check_disk_space "$(dirname "$OUT_ISO")" "$(( _iso_size_for_check * 11 / 10 ))" \
+    || { log_error "Espace disque insuffisant pour générer l'ISO finale — build interrompu avant d'essayer (plutôt qu'un échec xorriso à mi-écriture)."; exit 1; }
+fi
+
 module_60_build_iso
 module_70_validate_output
+
+# Nettoyage auto de l'arborescence extraite (évite l'accumulation disque entre builds).
+# APRÈS le module 70 (pas avant) : celui-ci lit encore $WIM_PATH (= $EXTRACT_DIR/sources/
+# install.wim) pour vérifier la présence du marqueur et du raccourci de rollback DANS
+# l'image — le supprimer plus tôt désactiverait silencieusement cette vérification.
+# Respecte --keep-work (inspection post-build) et ne s'applique qu'en mode réel.
+if [[ "${DRY_RUN:-0}" -eq 0 && "${KEEP_WORK:-0}" -eq 0 && -n "${EXTRACT_DIR:-}" && -d "${EXTRACT_DIR:-}" ]]; then
+  log_info "Nettoyage de l'arborescence extraite ($EXTRACT_DIR), désormais inutile (contenu dans $OUT_ISO)..."
+  rm -rf "$EXTRACT_DIR"
+fi
 
 log_step "Build terminé avec succès : $OUT_ISO"
 report_step "BUILD" "OK" "$OUT_ISO"

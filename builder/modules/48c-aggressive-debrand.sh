@@ -10,6 +10,13 @@
 # -> "Windows 12" s'applique aussi aux chaînes déjà déposées par les autres modules si elles
 # en contenaient (aucune ne devrait, mais le scan le couvrirait quand même).
 #
+# --no-backup : dans le pipeline, le vrai mécanisme de rollback est l'ISO source, jamais
+# modifiée (voir builder/build.sh, header). Les copies .pre-aggressive-patch par fichier
+# (utiles pour le labo manuel autonome, voir docs/AGGRESSIVE_DEBRANDING_LAB.md) seraient ici
+# redondantes et doublent transitoirement l'usage disque des fichiers patchés — cause réelle
+# d'un échec par manque d'espace rencontré lors du premier run intégré au pipeline
+# (03/10/2026, voir historique de commits). Supprimé pour cette raison précise.
+#
 # ⚠️ EXPERIMENTAL, désactivé par défaut dans tous les profils. Risques assumés par
 # FuraxDev : signatures Authenticode invalidées sur les fichiers patchés (listés dans le
 # rapport), rendu réel au boot non testable dans cet environnement.
@@ -51,21 +58,14 @@ module_48c_aggressive_debrand() {
   fi
   cat "$scan_report" >>"$LOG_FILE"
 
-  log_info "Application du patch (longueur égale, registre et chaîne de boot exclus)..."
+  log_info "Application du patch (longueur égale, registre et chaîne de boot exclus, --no-backup : rollback = ISO source)..."
   if ! /usr/bin/python3.12 "$BUILDER_DIR/tools/winstring_patch.py" "$inv" "$MOUNT_DIR" \
-       --log "$patch_log" --report "$patch_report" --apply >>"$LOG_FILE" 2>&1; then
+       --log "$patch_log" --report "$patch_report" --apply --no-backup >>"$LOG_FILE" 2>&1; then
     log_error "Échec du patch winstring_patch.py (voir $LOG_FILE)."
     report_step "48c-aggressive-debrand" "FAILED" "patch échoué"
     return 1
   fi
   cat "$patch_report" >>"$LOG_FILE"
-
-  # Les backups par fichier (.pre-aggressive-patch) ne doivent jamais se retrouver dans
-  # l'image finale déposée chez l'utilisateur — le rollback passe par une ISO non patchée,
-  # pas par des fichiers résiduels sur le C: installé.
-  local backups_removed
-  backups_removed=$(find "$MOUNT_DIR" -name "*.pre-aggressive-patch" -delete -print | wc -l)
-  log_info "Backups résiduels nettoyés avant commit : $backups_removed"
 
   local patched_count sig_invalidated
   patched_count=$(grep -oP 'Fichiers patchés\s*:\s*\K[0-9]+' "$patch_report" || echo "?")
