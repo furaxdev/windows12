@@ -11,22 +11,27 @@ internal static class Controls
     /// <summary>Enveloppe le contenu d'une pilule : fond semi-transparent, coins arrondis,
     /// ombre portée — le DWM (voir NativeMethods.ApplyAcrylicBackdrop) ajoute le vrai flou
     /// natif par-dessus une fois la fenêtre affichée ; ce fond sert de repli visuel avant/
-    /// pendant que le matériau DWM s'applique et sur les configurations où il échoue.</summary>
-    internal static Border PillChrome(UIElement content, double cornerRadius = 16)
+    /// pendant que le matériau DWM s'applique et sur les configurations où il échoue.
+    /// Style "panneau flottant" façon KDE Plasma (demande FuraxDev) : coins quasi-capsule
+    /// (radius proche de la moitié de la hauteur du contenu), verre plus aéré (fond moins
+    /// opaque), liseré plus visible, ombre plus diffuse/douce plutôt qu'un contact dur —
+    /// la disposition des 3 îles elle-même (positions/marges, dérivées de la vraie frame
+    /// vidéo) n'est volontairement PAS touchée ici, seulement l'habillage visuel.</summary>
+    internal static Border PillChrome(UIElement content, double cornerRadius = 22)
     {
         return new Border
         {
             CornerRadius = new CornerRadius(cornerRadius),
-            Background = new SolidColorBrush(Color.FromArgb(0xB8, 0x0E, 0x0C, 0x14)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF)),
+            Background = new SolidColorBrush(Color.FromArgb(0xA0, 0x0E, 0x0C, 0x14)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)),
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(12, 0, 12, 0),
+            Padding = new Thickness(14, 4, 14, 4),
             Effect = new System.Windows.Media.Effects.DropShadowEffect
             {
                 Color = Colors.Black,
-                Opacity = 0.45,
-                BlurRadius = 28,
-                ShadowDepth = 6,
+                Opacity = 0.35,
+                BlurRadius = 36,
+                ShadowDepth = 4,
                 Direction = 270,
             },
             Child = content,
@@ -51,7 +56,7 @@ internal static class Controls
 
         var template = new ControlTemplate(typeof(Button));
         var borderFactory = new FrameworkElementFactory(typeof(Border));
-        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(12));
         borderFactory.SetValue(Border.BackgroundProperty,
             active ? new SolidColorBrush(Color.FromArgb(0x24, 0xFF, 0xFF, 0xFF)) : Brushes.Transparent);
         borderFactory.Name = "Chrome";
