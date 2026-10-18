@@ -29,6 +29,7 @@ OUT_ISO=""
 WIM_INDEX=""
 KEEP_WORK=0
 CLEAN_OLD_OUTPUTS=0
+EDITIONS=""
 
 usage() {
   cat <<EOF
@@ -40,6 +41,13 @@ Options:
   --iso <chemin>        Chemin vers l'ISO Windows 11 source (obligatoire)
   --profile <nom>       Profil de fonctionnalités : minimal (défaut) | full
   --wim-index <N>       Index de l'image dans install.wim/install.esd (défaut : 1)
+  --editions <liste>    Liste d'éditions séparées par des virgules (ex: Home,Pro,Enterprise)
+                         à personnaliser TOUTES dans la même ISO finale — chaque nom doit
+                         correspondre EXACTEMENT à "Windows 11 <Edition>" dans le WIM source
+                         (pas de "Home N"/"Pro for Workstations" automatique). Prioritaire
+                         sur --wim-index si les deux sont donnés. Voir docs/FEATURES.md
+                         pour les éditions qui n'existent pas dans l'ISO officielle
+                         (ex. "S", "Famille") et ne peuvent donc pas être résolues ici.
   --work-dir <chemin>   Dossier de travail (défaut : $WORK_ROOT)
   --out <chemin>        Chemin de l'ISO générée (défaut : $OUT_DIR/FuraxWindows12-Beta-x64.iso)
   --keep-work           Ne pas supprimer le dossier de travail après un build réussi
@@ -55,6 +63,7 @@ while [[ $# -gt 0 ]]; do
     --iso) ISO_PATH="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --wim-index) WIM_INDEX="$2"; shift 2 ;;
+    --editions) EDITIONS="$2"; shift 2 ;;
     --work-dir) WORK_ROOT="$2"; shift 2 ;;
     --out) OUT_ISO="$2"; shift 2 ;;
     --keep-work) KEEP_WORK=1; shift ;;
@@ -202,69 +211,109 @@ else
 fi
 
 module_20_identify
-module_30_mount
 
-if [[ "$FEATURE_TRIVIAL_MARKER" -eq 1 ]]; then
-  module_40_customize_minimal
+# customize_one_image : personnalise UNE image (un index WIM = une édition), du montage au
+# démontage/commit. Extrait en fonction pour pouvoir être appelée soit une fois (mode
+# classique, $WIM_INDEX déjà fixé par --wim-index/défaut), soit en boucle (mode
+# --editions, une itération par édition réellement résolue, voir plus bas). Le nom de
+# l'édition courante (pour les logs/rapport) est passé en argument ; en mode classique
+# c'est juste "$WIN_EDITION_ID" une fois connu après module_20_identify/30_mount.
+customize_one_image() {
+  local edition_label="${1:-}"
+  [[ -n "$edition_label" ]] && log_step ">>> Personnalisation de l'édition : $edition_label (index $WIM_INDEX)"
+
+  module_30_mount
+
+  if [[ "$FEATURE_TRIVIAL_MARKER" -eq 1 ]]; then
+    module_40_customize_minimal
+  else
+    log_step "40-customize-minimal : SKIPPED (désactivé par le profil $PROFILE)"
+    report_step "40-customize-minimal" "SKIPPED" "désactivé par le profil"
+  fi
+
+  if [[ "$FEATURE_FIRST_LOGON" -eq 1 ]]; then
+    module_41_first_logon
+  else
+    log_step "41-first-logon : SKIPPED (désactivé par le profil $PROFILE)"
+    report_step "41-first-logon" "SKIPPED" "désactivé par le profil"
+  fi
+
+  if [[ "$FEATURE_BRANDING" -eq 1 ]]; then
+    module_42_branding
+  else
+    log_step "42-branding : SKIPPED (désactivé par le profil $PROFILE)"
+    report_step "42-branding" "SKIPPED" "désactivé par le profil"
+  fi
+
+  if [[ "$FEATURE_WALLPAPER" -eq 1 ]]; then
+    module_45_wallpaper
+  else
+    log_step "45-wallpaper : SKIPPED (désactivé par le profil $PROFILE)"
+    report_step "45-wallpaper" "SKIPPED" "désactivé par le profil"
+  fi
+
+  if [[ "$FEATURE_THEME" -eq 1 ]]; then
+    module_46_theme
+  else
+    log_step "46-theme : SKIPPED (désactivé par le profil $PROFILE)"
+    report_step "46-theme" "SKIPPED" "désactivé par le profil"
+  fi
+
+  if [[ "$FEATURE_PRIVACY_PERFORMANCE" -eq 1 ]]; then
+    module_47_privacy_performance
+  else
+    log_step "47-privacy-performance : SKIPPED (désactivé par le profil $PROFILE)"
+    report_step "47-privacy-performance" "SKIPPED" "désactivé par le profil"
+  fi
+
+  if [[ "$FEATURE_TASKBAR_EXPERIMENTAL" -eq 1 ]]; then
+    module_48_taskbar_experimental
+  else
+    log_step "48-taskbar-experimental : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
+    report_step "48-taskbar-experimental" "SKIPPED" "expérimental, désactivé par défaut"
+  fi
+
+  if [[ "$FEATURE_DEBRAND_AGGRESSIVE" -eq 1 ]]; then
+    module_48c_aggressive_debrand
+  else
+    log_step "48c-aggressive-debrand : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
+    report_step "48c-aggressive-debrand" "SKIPPED" "expérimental, désactivé par défaut"
+  fi
+
+  # Toujours déposé (zéro risque : dépôt de fichier, aucune exécution automatique) — c'est
+  # le contrepoint direct des personnalisations réellement appliquées ci-dessus.
+  module_49_rollback_scripts
+
+  module_50_unmount
+}
+
+if [[ -n "$EDITIONS" ]]; then
+  log_step "Mode multi-éditions : résolution des index réels pour « $EDITIONS »"
+  IFS=',' read -ra _requested_editions <<< "$EDITIONS"
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    log_info "(dry-run) résoudrait les éditions suivantes dans $WIM_PATH : ${_requested_editions[*]}"
+    for _ed in "${_requested_editions[@]}"; do
+      WIM_INDEX=1
+      customize_one_image "$_ed (dry-run)"
+    done
+  else
+    _resolution=$("${HIVEX_PYTHON:-/usr/bin/python3.12}" "$BUILDER_DIR/tools/resolve_wim_indices.py" "$WIM_PATH" "${_requested_editions[@]}" 2>&1) \
+      || { log_error "Résolution des éditions échouée :"$'\n'"$_resolution"; report_step "editions-resolve" "FAILED"; exit 1; }
+    log_info "Éditions résolues :"
+    echo "$_resolution" | tee -a "$LOG_FILE"
+    BUILT_EDITIONS=()
+    while IFS='=' read -r _edition_name _edition_index; do
+      [[ -z "$_edition_name" ]] && continue
+      WIM_INDEX="$_edition_index"
+      customize_one_image "$_edition_name"
+      BUILT_EDITIONS+=("$_edition_name (index $_edition_index)")
+    done <<< "$_resolution"
+    log_info "Éditions effectivement personnalisées dans cette ISO : ${BUILT_EDITIONS[*]}"
+    report_step "editions-resolve" "OK" "${BUILT_EDITIONS[*]}"
+  fi
 else
-  log_step "40-customize-minimal : SKIPPED (désactivé par le profil $PROFILE)"
-  report_step "40-customize-minimal" "SKIPPED" "désactivé par le profil"
+  customize_one_image "${WIN_EDITION_ID:-}"
 fi
-
-if [[ "$FEATURE_FIRST_LOGON" -eq 1 ]]; then
-  module_41_first_logon
-else
-  log_step "41-first-logon : SKIPPED (désactivé par le profil $PROFILE)"
-  report_step "41-first-logon" "SKIPPED" "désactivé par le profil"
-fi
-
-if [[ "$FEATURE_BRANDING" -eq 1 ]]; then
-  module_42_branding
-else
-  log_step "42-branding : SKIPPED (désactivé par le profil $PROFILE)"
-  report_step "42-branding" "SKIPPED" "désactivé par le profil"
-fi
-
-if [[ "$FEATURE_WALLPAPER" -eq 1 ]]; then
-  module_45_wallpaper
-else
-  log_step "45-wallpaper : SKIPPED (désactivé par le profil $PROFILE)"
-  report_step "45-wallpaper" "SKIPPED" "désactivé par le profil"
-fi
-
-if [[ "$FEATURE_THEME" -eq 1 ]]; then
-  module_46_theme
-else
-  log_step "46-theme : SKIPPED (désactivé par le profil $PROFILE)"
-  report_step "46-theme" "SKIPPED" "désactivé par le profil"
-fi
-
-if [[ "$FEATURE_PRIVACY_PERFORMANCE" -eq 1 ]]; then
-  module_47_privacy_performance
-else
-  log_step "47-privacy-performance : SKIPPED (désactivé par le profil $PROFILE)"
-  report_step "47-privacy-performance" "SKIPPED" "désactivé par le profil"
-fi
-
-if [[ "$FEATURE_TASKBAR_EXPERIMENTAL" -eq 1 ]]; then
-  module_48_taskbar_experimental
-else
-  log_step "48-taskbar-experimental : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
-  report_step "48-taskbar-experimental" "SKIPPED" "expérimental, désactivé par défaut"
-fi
-
-if [[ "$FEATURE_DEBRAND_AGGRESSIVE" -eq 1 ]]; then
-  module_48c_aggressive_debrand
-else
-  log_step "48c-aggressive-debrand : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
-  report_step "48c-aggressive-debrand" "SKIPPED" "expérimental, désactivé par défaut"
-fi
-
-# Toujours déposé (zéro risque : dépôt de fichier, aucune exécution automatique) — c'est le
-# contrepoint direct des personnalisations réellement appliquées ci-dessus.
-module_49_rollback_scripts
-
-module_50_unmount
 
 # Deuxième vérification d'espace disque juste avant l'étape la plus lourde (écriture de
 # l'ISO finale, ~= taille de l'ISO source). La vérification du module 00 porte sur l'espace
@@ -281,6 +330,10 @@ if [[ "${DRY_RUN:-0}" -eq 0 ]]; then
 fi
 
 module_60_build_iso
+
+if [[ -n "$EDITIONS" ]]; then
+  log_warn "Mode multi-éditions : 70-validate-output ne vérifie le marqueur/raccourci de rollback QUE dans la DERNIÈRE édition personnalisée ($WIM_INDEX) — pas dans chacune. Les autres éditions ont bien été personnalisées (voir le rapport ci-dessus pour chaque édition), simplement pas re-vérifiées individuellement par ce module."
+fi
 module_70_validate_output
 
 # Nettoyage auto de l'arborescence extraite (évite l'accumulation disque entre builds).

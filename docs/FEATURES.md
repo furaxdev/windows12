@@ -150,7 +150,19 @@ Voir `docs/DESIGN_SYSTEM.md` pour le détail complet. Résumé de faisabilité :
 
 ---
 
-## 💡 Backlog d'idées (100 pistes, non triées par priorité — brainstorm brut)
+## 🗂️ Éditions multiples dans une seule ISO (Pro/Home/Entreprise/...)
+
+Demande explicite de FuraxDev (18/10/2026) : "Windows 12 Pro, Home, S, Famille, Entreprise"
+dans une seule ISO, comme une vraie ISO Windows officielle qui laisse choisir l'édition au
+Setup.
+
+| Fonctionnalité | État | Faisabilité | Implémentation |
+|---|---|---|---|
+| Personnaliser plusieurs éditions réelles (Home/Pro/Enterprise/...) dans la même ISO finale | `IMPLEMENTED` (mécanisme), rendu réel au boot `UNCONFIRMED` | Facile une fois le bon index trouvé | `--editions Home,Pro,Enterprise` sur `build.sh` : `builder/tools/resolve_wim_indices.py` lit `wimlib-imagex info` et résout chaque nom demandé en index réel, par correspondance EXACTE `"Windows 11 <Edition>"` (jamais de numéro d'index codé en dur — ça varie selon l'ISO/langue, et jamais de variante approximative type "Home N"/"Pro for Workstations" choisie par erreur). `build.sh` boucle ensuite tout le pipeline de personnalisation (modules 30 à 50 : montage, debranding, thème, etc.) une fois par index résolu, puis assemble une seule ISO finale contenant toutes les éditions demandées. **Vérifié réellement** (18/10/2026) sur un faux WIM multi-images construit pour le test : résolution correcte (Home→1, Pro→3, Enterprise→6, en évitant bien les variantes N/Workstations), boucle exécutée pour les 3 index, fichier marqueur confirmé présent DANS chacun des 3 index après le cycle complet montage→personnalisation→démontage/commit (vérifié par extraction directe, pas supposé). |
+| Édition "S" | `CONCEPT ONLY` | Très difficile, risqué | Il n'existe **aucune image "Windows 11 S"** dans l'ISO officielle (Windows 10 S a été abandonné ; Windows 11 n'a qu'un **S Mode**, un bascule de policy à l'intérieur de Home/Pro, pas un index séparé). `resolve_wim_indices.py` échoue proprement (liste les éditions réellement disponibles) si on lui demande "S" — comportement voulu, pas un bug. Activer un vrai S Mode demanderait de manipuler les policies d'intégrité de code (Code Integrity Policy / WDAC) qui bloquent l'exécution de tout logiciel hors Microsoft Store — risque réel de verrouiller le système si c'est mal fait offline, et Microsoft ne documente pas de bascule officielle vers S Mode par simple édition de registre (seulement la sortie, pas l'entrée). Non tenté. |
+| Édition "Famille" | `CONCEPT ONLY` | N/A | Ce n'est pas une édition Windows — "Famille"/"Family" existe pour Xbox Game Pass ou Microsoft 365, jamais comme SKU du système d'exploitation Windows lui-même. Pas d'index à résoudre, pas de mapping arbitraire inventé. |
+
+
 
 Liste de fonctionnalités/idées supplémentaires envisageables pour le projet, au-delà de ce qui est directement inspiré de la vidéo concept. **Aucune de ces lignes n'est implémentée** sauf mention contraire — c'est un backlog de brainstorm, pas un plan engagé. Chaque catégorie suit la même règle d'honnêteté que le reste du document.
 
