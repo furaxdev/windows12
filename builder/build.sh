@@ -173,6 +173,11 @@ if grep -q '^\s*debrand_aggressive:\s*true' "$PROFILE_FILE"; then
 else
   FEATURE_DEBRAND_AGGRESSIVE=0
 fi
+if grep -q '^\s*cortana_experimental:\s*true' "$PROFILE_FILE"; then
+  FEATURE_CORTANA_EXPERIMENTAL=1
+else
+  FEATURE_CORTANA_EXPERIMENTAL=0
+fi
 log_info "Feature trivial_marker (profil $PROFILE) : $FEATURE_TRIVIAL_MARKER"
 log_info "Feature wallpaper (profil $PROFILE) : $FEATURE_WALLPAPER"
 log_info "Feature installer_background (profil $PROFILE) : $FEATURE_INSTALLER_BACKGROUND"
@@ -184,6 +189,7 @@ log_info "Feature privacy_performance (profil $PROFILE) : $FEATURE_PRIVACY_PERFO
 log_info "Feature taskbar_floating_pill_experimental (profil $PROFILE) : $FEATURE_TASKBAR_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — application maison compilée au build, opt-in uniquement)"
 log_info "Feature setup_wizard_experimental (profil $PROFILE) : $FEATURE_SETUP_WIZARD_EXPERIMENTAL (EXPERIMENTAL/UNTESTED — écran d'accueil maison avant le vrai Setup, opt-in uniquement)"
 log_info "Feature debrand_aggressive (profil $PROFILE) : $FEATURE_DEBRAND_AGGRESSIVE (EXPERIMENTAL — supprime \"Windows 11\" hors registre/boot, signatures invalidées, opt-in uniquement, voir docs/AGGRESSIVE_DEBRANDING_LAB.md)"
+log_info "Feature cortana_experimental (profil $PROFILE) : $FEATURE_CORTANA_EXPERIMENTAL (EXPERIMENTAL — assistant local type Cortana, actions exécutables uniquement après confirmation explicite, aucun modèle .gguf fourni, opt-in uniquement)"
 
 # --- Pipeline ---
 module_00_validate
@@ -278,6 +284,13 @@ customize_one_image() {
   else
     log_step "48c-aggressive-debrand : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
     report_step "48c-aggressive-debrand" "SKIPPED" "expérimental, désactivé par défaut"
+  fi
+
+  if [[ "$FEATURE_CORTANA_EXPERIMENTAL" -eq 1 ]]; then
+    module_48d_cortana_experimental
+  else
+    log_step "48d-cortana-experimental : SKIPPED (EXPERIMENTAL, désactivé par défaut/par le profil $PROFILE)"
+    report_step "48d-cortana-experimental" "SKIPPED" "expérimental, désactivé par défaut"
   fi
 
   # Toujours déposé (zéro risque : dépôt de fichier, aucune exécution automatique) — c'est
